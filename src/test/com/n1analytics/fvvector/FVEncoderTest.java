@@ -3,6 +3,8 @@ package com.n1analytics.fvvector;
 import static cc.redberry.rings.Rings.GF;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.security.SecureRandom;
+
 import org.junit.jupiter.api.Test;
 
 import com.n1analytics.fvvector.FVParameters.SecurityParam;
@@ -14,105 +16,85 @@ class FVEncoderTest {
 
 	@Test
 	void testEncodeDecode() {
+		
 		FVParameters params = FVParameters.FVParamsN1024S128;
-		FVContext pg = new FVContext(params);
-		FVEncoder fve = new FVEncoder(pg);
+		FVEncoder fve = new FVEncoder(params);
+		SecureRandom rand = new SecureRandom();
 		
 		long data[] = new long[(int)params.polynomialModulusExponent];
-		data[0] = 100L;
-		data[200] = 200L;
-		data[300] = -300L;
-		data[1023] = -35145234L;
+		for(int i = 0; i < data.length; i++)
+		{
+			data[i] = params.ptRing.modulus(rand.nextLong());
+		}
 		
 		UnivariatePolynomialZp64 encoded = fve.encode(data);
+		
+		long encValues[] = new long[(int)params.polynomialModulusExponent];
+		for(int i = 0; i < encValues.length; i++)
+			encValues[i] = encoded.get(i);
+		
 		long[] decoded = fve.decode(encoded);
 		
-		assertEquals(decoded[0], encoded.ring.modulus(data[0]));
-		assertEquals(decoded[200], encoded.ring.modulus(data[200]));
-		assertEquals(decoded[300], encoded.ring.modulus(data[300]));
-		assertEquals(decoded[1023], encoded.ring.modulus(data[1023]));
-		
+		for(int i = 0; i < data.length; i++)
+		{
+			assertEquals(decoded[i], encoded.ring.modulus(data[i])); // got the right value
+			assertEquals(encValues[i], encoded.get(i));  // Nothing changed in the encoded data in the decoding process			
+		}
+
 		assertThrows(RuntimeException.class, () -> { fve.encode(new long[100]); });
-		
+		assertThrows(RuntimeException.class, () -> { fve.decode(params.ctPolyField.randomElement()); });
 	}
 
 	@Test
-	void testEncodedAddition() {
+	void testEncodedArithmetic() {
 		FVParameters params = FVParameters.FVParamsN1024S128;
-		FVContext pg = new FVContext(params);
-		FVEncoder fve = new FVEncoder(pg);
+		FVEncoder fve = new FVEncoder(params);
+		SecureRandom rand = new SecureRandom();
 		
 		long data1[] = new long[(int)params.polynomialModulusExponent];
-		data1[0] = 100L;
-		data1[200] = 200L;
-		data1[300] = -300L;
-		data1[1023] = -35145234L;
+		for(int i = 0; i < data1.length; i++)
+		{
+			data1[i] = params.ptRing.modulus(rand.nextLong());
+		}
 		
 		long data2[] = new long[(int)params.polynomialModulusExponent];
-		data2[0] = 101L;
-		data2[200] = 201L;
-		data2[300] = -301L;
-		data2[1023] = -351452534L;
-
-		for(int i = 1; i < 20; i++)
+		for(int i = 0; i < data2.length; i++)
 		{
-			data1[i] = (long)i;
-			data2[i] = (long)(i-1);
+			data2[i] = params.ptRing.modulus(rand.nextLong());
 		}
 		
 		UnivariatePolynomialZp64 encoded1 = fve.encode(data1);
 		UnivariatePolynomialZp64 encoded2 = fve.encode(data2);
-		UnivariatePolynomialZp64 res = pg.ptPolyField.add(encoded1,encoded2);
-
+		
+		long encValues1[] = new long[(int)params.polynomialModulusExponent];
+		for(int i = 0; i < encValues1.length; i++)
+			encValues1[i] = encoded1.get(i);
+		long encValues2[] = new long[(int)params.polynomialModulusExponent];
+		for(int i = 0; i < encValues2.length; i++)
+			encValues2[i] = encoded2.get(i);
+		
+		UnivariatePolynomialZp64 res = params.ptPolyField.add(encoded1,encoded2);
 		long[] decoded = fve.decode(res);
-		
-		assertEquals(decoded[0], encoded1.ring.modulus(data1[0]+data2[0]));
-		assertEquals(decoded[200], encoded1.ring.modulus(data1[200]+data2[200]));
-		assertEquals(decoded[300], encoded1.ring.modulus(data1[300]+data2[300]));
-		assertEquals(decoded[1023], encoded1.ring.modulus(data1[1023]+data2[1023]));
 
-		UnivariatePolynomialZp64 res2 = pg.ptPolyField.multiply(encoded1,encoded2);
-		long[] decoded2 = fve.decode(res2);
-		assertEquals(decoded2[0], encoded1.ring.modulus(data1[0]*data2[0]));
-		assertEquals(decoded2[200], encoded1.ring.modulus(data1[200]*data2[200]));
-		assertEquals(decoded2[300], encoded1.ring.modulus(data1[300]*data2[300]));
-		assertEquals(decoded2[1023], encoded1.ring.modulus(data1[1023]*data2[1023]));
-	}
-
-	@Test
-	void testEncodedMultiply() {
-		FVParameters params = FVParameters.FVParamsN1024S128;
-		FVContext pg = new FVContext(params);
-		FVEncoder fve = new FVEncoder(pg);
-		
-		long data1[] = new long[(int)params.polynomialModulusExponent];
-		data1[0] = 100L;
-		data1[200] = 200L;
-		data1[300] = -300L;
-		data1[1023] = -35145234L;
-		
-		long data2[] = new long[(int)params.polynomialModulusExponent];
-		data2[0] = 101L;
-		data2[200] = 201L;
-		data2[300] = -301L;
-		data2[1023] = -351452534L;
-
-		for(int i = 1; i < 20; i++)
+		for(int i = 0; i < data1.length; i++)
 		{
-			data1[i] = (long)i;
-			data2[i] = (long)(i-1);
+			assertEquals(decoded[i], encoded1.ring.modulus(data1[i] + data2[i])); // got the right value
+			assertEquals(encValues1[i], encoded1.get(i));  // Nothing changed in the encoded data in the addition process			
+			assertEquals(encValues2[i], encoded2.get(i));  // Nothing changed in the encoded data in the addition process			
 		}
-		
-		UnivariatePolynomialZp64 encoded1 = fve.encode(data1);
-		UnivariatePolynomialZp64 encoded2 = fve.encode(data2);
-		UnivariatePolynomialZp64 res2 = pg.ptPolyField.multiply(encoded1,encoded2);
+
+
+		UnivariatePolynomialZp64 res2 = params.ptPolyField.multiply(encoded1,encoded2);
 		long[] decoded2 = fve.decode(res2);
 
-		assertEquals(decoded2[0], encoded1.ring.modulus(data1[0]*data2[0]));
-		assertEquals(decoded2[200], encoded1.ring.modulus(data1[200]*data2[200]));
-		assertEquals(decoded2[300], encoded1.ring.modulus(data1[300]*data2[300]));
-		assertEquals(decoded2[1023], encoded1.ring.modulus(data1[1023]*data2[1023]));
+		for(int i = 0; i < data1.length; i++)
+		{
+			assertEquals(decoded2[i], encoded1.ring.modulus(data1[i] * data2[i])); // got the right value
+			assertEquals(encValues1[i], encoded1.get(i));  // Nothing changed in the encoded data in the multiplication process			
+			assertEquals(encValues2[i], encoded2.get(i));  // Nothing changed in the encoded data in the multiplication process			
+		}
 	}
+
 	
 //	@Test
 //	void testPart() {

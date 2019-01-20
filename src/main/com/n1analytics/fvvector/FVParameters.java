@@ -5,12 +5,18 @@
 package com.n1analytics.fvvector;
 
 
-import java.math.BigInteger;
+import static cc.redberry.rings.Rings.GF;
+
 import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.IntegersZp64;
+import cc.redberry.rings.poly.FiniteField;
+import cc.redberry.rings.poly.univar.UnivariatePolynomial;
+import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 
 /**
  * 
@@ -24,6 +30,9 @@ import java.util.Map;
  * * the plainTextModulus must be a prime number and congruent to 1 (mod 2n)
  * * the coefficientModulus modulus must be smaller than 2^61 at this time
  * * the coefficientModulus must be an integer multiple of the plainTextModulus
+ * 
+ * Convenient choices for 1024 length vectors and 2048 length vectors at 128 bit
+ * are available as static members FVParamsN1024S128 and FVParamsN2048S128
  * 
  * @author har991
  *
@@ -61,26 +70,54 @@ public class FVParameters {
         polymodMaxBits192 = Collections.unmodifiableMap(aMap);
     }
 	
-    public static final double defaultNoiseSD = 8.0 / Math.sqrt(2*Math.PI);
+   
+    public static final double defaultNoiseSD = 3.19153824321146142351956847947505494780686905d; // 8.0 / Math.sqrt(2*Math.PI);
 
     /**
      * A conservative parameter set that gives 128 bits of security and 1024 vector size.
-     * Has 19 bits for the plaintext, 29 for the ciphertext, giving q/t of 1032.
+     * Has 16 bits for the plaintext, 29 for the ciphertext, giving q/t of 13106. Enough for encrypt/decrypt, but not enough for much arithmetic
      */
-    public static final FVParameters FVParamsN1024S128  = new FVParameters(SecurityParam.BITS_128, 1024L, 536839176L, 520193L, defaultNoiseSD); //19 bits in t, 29 bits in q
+    public static final FVParameters FVParamsN1024S128  = new FVParameters(SecurityParam.BITS_128, 1024L, 536834866L, 40961L, defaultNoiseSD); //16 bits in t, 29 bits in q
 
     /**
      * A conservative parameter set that gives 128 bits of security and 2048 vector size.
      * Has 32 bits for the plaintext, 56 for the ciphertext, giving q/t of 24 bits.
      */
     public static final FVParameters FVParamsN2048S128  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, defaultNoiseSD); //19 bits in t, 29 bits in q
+ 
+    /**
+     * A conservative parameter set that gives 128 bits of security and 2048 vector size.
+     * Has 16 bits for the plaintext, 40 for the ciphertext, giving q/t of 34 bits.
+     */
+    public static final FVParameters FVParamsN2048S128small  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057594037920137L, 40961L, defaultNoiseSD); //16 bits in t, 40 bits in q
+
+     /** 
+      * Some insecure parameters - with no noise added to the ciphertexts. Purely here for testing and @todo should be removed.
+      */
+    public static final FVParameters FVParamsN1024S128insecure  = new FVParameters(SecurityParam.BITS_128, 1024L, 536834866L, 40961L, 0.0000000001); //16 bits in t, 29 bits in q
+    public static final FVParameters FVParamsN2048S128insecure  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, 0.0000000001); //19 bits in t, 29 bits in q
+    
+   
+    
     
 	long coefficientModulus;
 	long plainTextModulus;
 	long polynomialModulusExponent;
 	double noiseStandardDeviation;
 	
+
+	/**
+	 *  The following members are defined for convenience. They allow the user to generate polynomials, apply modular arithmetic etc.
+	 *  in the appropriate fields for the parameters contained in the class
+	 */
 	
+	IntegersZp64 ptRing;   // plaintext ring - integers modulus plainTextModulus
+	IntegersZp64 ctRing;   // ciphertext ring - integers modulus coefficientModulus
+	UnivariatePolynomialZp64 ptQuotientPoly;  // the quotient poly = x^polynomialModulusExponent + 1 with coefficients from plaintext ring
+	UnivariatePolynomialZp64 ctQuotientPoly;  // the quotient poly = x^polynomialModulusExponent + 1 with coefficients from ciphertext ring
+	FiniteField<UnivariatePolynomialZp64> ptPolyField; // the Galois Field represented by polynomials with coefficients in the plaintext ring modolo the quotient poly
+	FiniteField<UnivariatePolynomialZp64> ctPolyField; // the Galois Field represented by polynomials with coefficients in the ciphertext ring modolo the quotient poly
+ 	
 	/**
 	 * 
 	 * Construct a parameter set for Fan Vercauterin for the given parameters that
@@ -100,6 +137,7 @@ public class FVParameters {
 		plainTextModulus = t;
 		noiseStandardDeviation = sigma;
 		CheckParameterConsistency(bos);
+		ConstructPolynomialFields();
 	}
 	
 	
@@ -250,10 +288,84 @@ public class FVParameters {
 		return result;
 	}
 	
+	/**
+	 * Test that input v is congruent to c mod 2n
+	 * 
+	 * @param v    value
+	 * @param n	   modulus n
+	 * @param c    congruence
+	 * @return	   boolean saying whether test is passed.
+	 * @throws ArithmeticException
+	 */
 	public static boolean Is2NCongruent(long v, long n, int c) throws ArithmeticException
 	{
 		return BigInteger.valueOf(v - c).mod(BigInteger.valueOf(2*n)).intValue() == 0;
 	}
 	
 	
+	/**
+	 *  Construct the object that represents polynomials in the plaintext and ciphertext spaces
+	 */
+	private void ConstructPolynomialFields() {
+		long[] data = new long[(int)polynomialModulusExponent + 1];
+		data[0] = 1L;
+		data[(int)polynomialModulusExponent]=1L;
+
+		this.ptQuotientPoly = UnivariatePolynomialZp64.create(plainTextModulus, data);
+		this.ptPolyField = GF(ptQuotientPoly);
+		this.ptRing = ptQuotientPoly.ring;
+		this.ctQuotientPoly = UnivariatePolynomialZp64.create(coefficientModulus, data);
+		this.ctPolyField = GF(ctQuotientPoly);		
+		this.ctRing = ctQuotientPoly.ring;
+		
+	}
+
+	
+	/**
+	 * Generates a polynomial in the plaintext space with "small" (-1,0,1) coefficients randomly
+	 * distributed.
+	 * 
+	 * @return Polynomial with "small" coefficients
+	 */
+	UnivariatePolynomialZp64 generateSmallPTPolynomial()
+	{
+		return PolynomialUtils.generateSmallPolynomial(polynomialModulusExponent, plainTextModulus);
+	}
+	
+	/**
+	 * Generates a polynomial in the ciphertext space with "small" (-1,0,1) coefficients randomly
+	 * distributed.
+	 * 
+	 * @return Polynomial with "small" coefficients
+	 */
+	UnivariatePolynomialZp64 generateSmallCTPolynomial()
+	{
+		return PolynomialUtils.generateSmallPolynomial(polynomialModulusExponent, coefficientModulus);
+	}
+	
+	/**
+	 * Generates a polynomial in the ciphertext space with uniform coefficients randomly
+	 * distributed from 0 to coefficientModulus - 1.
+	 * 
+	 * @return Polynomial with uniform coefficients
+	 */
+	UnivariatePolynomialZp64  generaateUniformCTPolynomial()
+	{
+		return PolynomialUtils.generateUniformPolynomial(polynomialModulusExponent, coefficientModulus);
+	}
+
+	/**
+	 * Generates a polynomial in the ciphertext space with  coefficients randomly
+	 * distributed drawn from a discrete gaussian distribution with a standard deviation
+	 * given by noiseStandardDeviation. Distribution is cutoff where probability of a 
+	 * value is less than 2^-64.
+	 * 
+	 * @return Polynomial with noise coefficients
+	 */
+	UnivariatePolynomialZp64 generateNoiseCTPolynomial()
+	{
+		// 9.4 magic number in the following comes from the initial FV paper as a bound where < 2-64 chance of hitting an integer outside this range.
+		return PolynomialUtils.generateNoisePolynomial(polynomialModulusExponent, coefficientModulus, noiseStandardDeviation, 9.4*noiseStandardDeviation);
+	}
+
 }

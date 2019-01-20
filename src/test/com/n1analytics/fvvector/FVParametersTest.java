@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 
 import com.n1analytics.fvvector.FVParameters.SecurityParam;
 
+import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
+
 class FVParametersTest {
 
 	@Test
@@ -78,8 +80,9 @@ class FVParametersTest {
 	@Test
 	public void testGenerateParameterSet() throws Exception {
 		
-		FVParameters.generateParameterSet(SecurityParam.BITS_128, 1024L, 19, 10);
+		FVParameters.generateParameterSet(SecurityParam.BITS_128, 1024L, 16, 13);
 		FVParameters.generateParameterSet(SecurityParam.BITS_192, 1024L, 14, 5);
+		FVParameters.generateParameterSet(SecurityParam.BITS_128, 2048L, 16, 40);
 
 		assertThrows(IllegalArgumentException.class, () -> { FVParameters.generateParameterSet(SecurityParam.BITS_128, 0L, 19, 10); });
 		assertThrows(IllegalArgumentException.class, () -> { FVParameters.generateParameterSet(SecurityParam.BITS_128, 65536L, 19, 10); });
@@ -91,6 +94,27 @@ class FVParametersTest {
 		
 		assertThrows(RuntimeException.class, () -> { FVParameters.generateParameterSet(SecurityParam.BITS_192, 1024L, 10, 9); });		
 		
+	}
+	
+	@Test
+	public void testGeneratePolynomials() throws Exception {
+		FVParameters ps = FVParameters.FVParamsN1024S128;
+		UnivariatePolynomialZp64 sp0 = ps.generateSmallPTPolynomial();
+		assertTrue(sp0.degree() <= ps.polynomialModulusExponent-1);
+		assertEquals(sp0.coefficientRingCardinality().longValue(), ps.plainTextModulus);
+		
+		UnivariatePolynomialZp64 sp1 = ps.generateSmallCTPolynomial();
+		assertTrue(sp1.degree() <= ps.polynomialModulusExponent-1);
+		assertEquals(sp1.coefficientRingCardinality().longValue(), ps.coefficientModulus);
+				
+		UnivariatePolynomialZp64 sp3 = ps.generaateUniformCTPolynomial();
+		assertTrue(sp3.degree() <= ps.polynomialModulusExponent-1);
+		assertEquals(sp3.coefficientRingCardinality().longValue(), ps.coefficientModulus);
+		
+		UnivariatePolynomialZp64 sp2 = ps.generateNoiseCTPolynomial();
+		assertTrue(sp2.degree() <= ps.polynomialModulusExponent-1);
+		assertEquals(sp2.coefficientRingCardinality().longValue(), ps.coefficientModulus);
+
 	}
 
 }

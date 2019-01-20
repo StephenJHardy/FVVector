@@ -12,10 +12,10 @@ class FVVectorTest {
 	void testEncryptDecrypt() {
 		
 		FVParameters ps = FVParameters.FVParamsN1024S128;
-		FVContext pg = new FVContext(ps);
-		FVPrivateKey privKey = new FVPrivateKey(pg);
+		FVPrivateKey privKey = new FVPrivateKey(ps);
+		FVPublicKey pubKey = new FVPublicKey(privKey);
+		FVContext context = new FVContext(pubKey);
 		
-		FVPublicKey pubKey = new FVPublicKey(pg, privKey);
 		
 		long data[] = new long[(int)ps.polynomialModulusExponent];
 		data[0] = 100L;
@@ -23,56 +23,87 @@ class FVVectorTest {
 		data[300] = -300L;
 		data[1023] = -35145234L;
 		
-		FVPlainText pt = new FVPlainText();
-		pt.encode(pg, data);
-		FVCipherText ct = pt.encrypt(pg, pubKey);
 		
-		FVPlainText pt2 = ct.decrypt(pg, privKey);
-		long data2[] = pt2.decode(pg);
-
-		assertEquals(pg.ptRing.modulus(data[0]),pg.ptRing.modulus(data2[0]));
-		assertEquals(pg.ptRing.modulus(data[200]),pg.ptRing.modulus(data2[200]));
-		assertEquals(pg.ptRing.modulus(data[300]),pg.ptRing.modulus(data2[300]));
-		assertEquals(pg.ptRing.modulus(data[1023]),pg.ptRing.modulus(data2[1023]));
+		FVPlainText pt = context.encode(data);
+		FVCipherText ct = context.encrypt(pt);
 		
+		long data2[] = context.decryptAndDecode(ct, privKey);
+		
+		assertEquals(ps.ptRing.modulus(data[0]), ps.ptRing.modulus(data2[0]));
+		assertEquals(ps.ptRing.modulus(data[200]),ps.ptRing.modulus(data2[200]));
+		assertEquals(ps.ptRing.modulus(data[300]),ps.ptRing.modulus(data2[300]));
+		assertEquals(ps.ptRing.modulus(data[1023]),ps.ptRing.modulus(data2[1023]));
+		
+		long data3[] = context.decryptAndDecode(ct, privKey);
+		
+		assertEquals(ps.ptRing.modulus(data[0]), ps.ptRing.modulus(data3[0]));
+		assertEquals(ps.ptRing.modulus(data[200]),ps.ptRing.modulus(data3[200]));
+		assertEquals(ps.ptRing.modulus(data[300]),ps.ptRing.modulus(data3[300]));
+		assertEquals(ps.ptRing.modulus(data[1023]),ps.ptRing.modulus(data3[1023]));
 	}
 
 	@Test
 	void testEncryptedAddition() {
 		
 		FVParameters ps = FVParameters.FVParamsN1024S128;
-		FVContext pg = new FVContext(ps);
-		FVPrivateKey privKey = new FVPrivateKey(pg);
+		FVPrivateKey privKey = new FVPrivateKey(ps);		
+		FVPublicKey pubKey = new FVPublicKey(privKey);
+		FVContext context = new FVContext(pubKey);
 		
-		FVPublicKey pubKey = new FVPublicKey(pg, privKey);
+		SecureRandom rand = new SecureRandom();
+//		rand.setSeed(1L);
 		
+		long data1[] = new long[(int)ps.polynomialModulusExponent];
+		long data2[] = new long[(int)ps.polynomialModulusExponent];
+		for(int i = 0; i < data1.length; i++)
+		{
+			data1[i] = ps.ptRing.modulus(rand.nextLong());
+			data2[i] = ps.ptRing.modulus(rand.nextLong());
+		}
+		
+		FVCipherText ct1 = context.encrypt(data1);
+		FVCipherText ct2 = context.encrypt(data2);
+		
+		FVCipherText ct3 = context.add(ct1, ct2);
+
+		long datares[] = context.decryptAndDecode(ct3, privKey);
+
+		for(int i = 0; i < data1.length; i++)
+		{
+//			System.err.println(String.format("%d %d %d %d %d\n",data1[i],data2[i],datares[i],ps.ptRing.modulus(data1[i] + data2[i]),ps.ptRing.modulus(datares[i])));
+			assertEquals(ps.ptRing.modulus(data1[i] + data2[i]), ps.ptRing.modulus(datares[i]));
+		}
+	}
+
+	@Test
+	void testEncryptedMultiplication() {
+		
+		FVParameters ps = FVParameters.generateParameterSet(FVParameters.SecurityParam.BITS_128, 2048, 14, 56-14);
+		FVPrivateKey privKey = new FVPrivateKey(ps);		
+		FVPublicKey pubKey = new FVPublicKey(privKey);
+		FVContext context = new FVContext(pubKey); 
+
 		SecureRandom rand = new SecureRandom();
 		
 		long data1[] = new long[(int)ps.polynomialModulusExponent];
 		long data2[] = new long[(int)ps.polynomialModulusExponent];
 		for(int i = 0; i < data1.length; i++)
 		{
-			data1[i] = pg.ptRing.modulus(rand.nextLong());
-			data2[i] = pg.ptRing.modulus(rand.nextLong());
+			data1[i] = ps.ptRing.modulus(rand.nextLong());
+			data2[i] = ps.ptRing.modulus(rand.nextLong());
 		}
 		
-		FVPlainText pt1 = new FVPlainText();
-		pt1.encode(pg, data1);
-		FVCipherText ct1 = pt1.encrypt(pg, pubKey);
-
-		FVPlainText pt2 = new FVPlainText();
-		pt2.encode(pg, data2);
-		FVCipherText ct2 = pt2.encrypt(pg, pubKey);
+		FVCipherText ct1 = context.encrypt(data1);
+		FVCipherText ct2 = context.encrypt(data2);
 		
-		FVCipherText ct3 = ct1.add(pg, ct2);
+		FVCipherText ct3 = context.multiply(ct1, ct2);
 
-		FVPlainText res = ct3.decrypt(pg, privKey);
-		long datares[] = res.decode(pg);
+		long datares[] = context.decryptAndDecode(ct3, privKey);
 
 		for(int i = 0; i < data1.length; i++)
-			assertEquals(pg.ptRing.modulus(data1[i] + data2[i]), pg.ptRing.modulus(datares[i]));
-		
+		{
+//			System.err.println(String.format("%d %d %d %d %d\n",data1[i],data2[i],datares[i],ps.ptRing.modulus(data1[i] + data2[i]),ps.ptRing.modulus(datares[i])));
+			assertEquals(ps.ptRing.modulus(data1[i] * data2[i]), ps.ptRing.modulus(datares[i]));
+		}
 	}
-
-	
 }

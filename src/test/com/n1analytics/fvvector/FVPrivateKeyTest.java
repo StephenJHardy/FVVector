@@ -8,8 +8,13 @@ class FVPrivateKeyTest {
 
 	@Test
 	void testFVPrivateKey() {
-		FVContext pgen = new FVContext(FVParameters.FVParamsN1024S128);
-		FVPrivateKey pk = new FVPrivateKey(pgen);
+		FVParameters ps = FVParameters.FVParamsN1024S128;
+		FVPrivateKey  pk = new FVPrivateKey(ps);
+		
+		//smallness of the private key poly is tested in polynomialutilstest
+		assertTrue( pk.key().degree() > 0 ); 
+		assertEquals(pk.key().coefficientRingCardinality().longValue(), ps.coefficientModulus);
+
 	}
 
 }

@@ -10,172 +10,135 @@ import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 
+/** This class carries around the information required to manipulate 
+ * ciphertexts using homomorphic arithmetic and offers convenient
+ * 
+ * @author har991
+ *
+ */
 public class FVContext {
 
-	public FVParameters params;
-
-	IntegersZp64 ptRing;
-	IntegersZp64 ctRing;
-	UnivariatePolynomialZp64 ptQuotientPoly;
-	UnivariatePolynomialZp64 ctQuotientPoly;
-	FiniteField<UnivariatePolynomialZp64> ptPolyField;
-	FiniteField<UnivariatePolynomialZp64> ctPolyField;
-
-	long rootsOfUnity[];
-	UnivariatePolynomialZp64 bases[];
-	
+	public FVPublicKey publicKey;
 	private static final SecureRandom sec = new SecureRandom();
+	private FVEncoder encoder;
 	
-	FVContext(FVParameters params)
+	/**
+	 * 
+	 * Class that combines the ability to encode data into a vector with a public key
+	 * This class allows manipulations of ciphertexts, including multiplication and 
+	 * addition.
+	 * 
+	 * @param params Parameters of the crypto system
+	 */
+	FVContext(FVPublicKey publicKey)
 	{
-		this.params = params;
-		ConstructPolynomialField();
-		this.rootsOfUnity = CalculateRootsOfUnity(params.polynomialModulusExponent, params.plainTextModulus);
-		this.bases = CalculateBasisFunctions(params.polynomialModulusExponent, params.plainTextModulus, rootsOfUnity);
+		this.publicKey = publicKey;
+		encoder = new FVEncoder(publicKey.params);
+	}
+
+
+	/**
+	 * Encode a vector of longs into a plaintext according to the encryption
+	 * parameters of this context.
+	 * 
+	 * @param data array of long data to be encrypted - throws on incorrect length
+	 * @return a plaintext object with the data encoded in its slots
+	 */
+	FVPlainText encode(long[] data)
+	{
+		if(data.length != publicKey.params.polynomialModulusExponent)
+			throw new RuntimeException("Data to encode has wrong length");
+		FVPlainText ret = new FVPlainText();
+		ret.encode(encoder, data);
+		return ret;
+	}
+
+	
+	/**
+	 * Decode the data inside the given plaintext according to the encoding parameters 
+	 * is the context.
+	 * 
+	 * @param pt  the plaintext to decode
+	 * @return a long array with the values in the slots encoded in the plaintext
+	 */
+	long[] decode(FVPlainText pt)
+	{
+		return pt.decode(encoder);
+	}
+	
+	/**
+	 * Encrypt an encoded plaintext into a ciphertext using the public key associated with this context
+	 * 
+	 * @param pt plaintext to encrypte
+	 * @return ciphertext with encrypted plaintext
+	 */
+	FVCipherText encrypt(FVPlainText pt)
+	{
+		return pt.encrypt(publicKey);
 	}
 
 	/**
-	 *  Construct the object that represents polynomials in the plaintext and ciphertext spaces
+	 * Encode and encrypt a given array of longs. Assumes the array is of correct length or will throw
+	 * 
+	 * @param data the data to encrypt
+	 * @return a cipher text object with the encrypted data
 	 */
-	private void ConstructPolynomialField() {
-		long[] data = new long[(int)params.polynomialModulusExponent + 1];
-		data[0] = 1L;
-		data[(int)params.polynomialModulusExponent]=1L;
-
-		this.ptQuotientPoly = UnivariatePolynomialZp64.create(params.plainTextModulus, data);
-		this.ptPolyField = GF(ptQuotientPoly);
-		this.ptRing = ptQuotientPoly.ring;
-		this.ctQuotientPoly = UnivariatePolynomialZp64.create(params.coefficientModulus, data);
-		this.ctPolyField = GF(ctQuotientPoly);		
-		this.ctRing = ctQuotientPoly.ring;
-		
+	FVCipherText encrypt(long[] data)
+	{
+		return encode(data).encrypt(publicKey);
 	}
 
-	public static long[] CalculateRootsOfUnity(long n, long t)
+	/**
+	 * Decrypt a ciphertext to an encoded plaintext using the provided private key
+	 * 
+	 * @param ct ciphertext to decrypt
+	 * @param pk private key to use
+	 * @return a plaintext with data encoded in the slots
+	 */
+	FVPlainText decrypt(FVCipherText ct, FVPrivateKey pk)
 	{
-		// find ks such that k^2n mod t == 1
-		// and where k^i mod t != 1 for all i != 2n
-		long twon = n * 2L;
-		long gen = 0L;
-		IntegersZp64 cfRing = Zp64(t);
-		for(long k = 1L; k < t; k++)
-		{
-			long res = cfRing.powMod(k,twon);
-			if(res == 1)
-			{
-				boolean soleRoot = true;
-				for(long j = 1L; j < twon; j++)
-				{
-					if(cfRing.powMod(k, j) == 1L)
-					{
-						soleRoot = false;
-						break;
-					}
-				}
-				if(soleRoot)
-				{
-					gen = k;
-					break;
-				}
-			}
-		}
-		long [] rootsOfUnity = new long[(int)n];
-		rootsOfUnity[0] = gen;
-		for(long k = 1; k < n; k++)
-			rootsOfUnity[(int)k] = cfRing.powMod(gen, 2L*k + 1L);
-		return rootsOfUnity;
+		return ct.decrypt(pk);
 	}
 
-	public static UnivariatePolynomialZp64[] CalculateBasisFunctions(long n, long t, long[] rootsOfUnity)
+	/**
+	 * Decrypt and decode a ciphertext to an array of longs using the provided private key
+	 * 
+	 * @param ct ciphertext to decrypt and decode
+	 * @param pk private key to use
+	 * @return an array with the decoded data
+	 */
+	long[] decryptAndDecode(FVCipherText ct, FVPrivateKey pk)
 	{
-		
-		IntegersZp64 cfRing = Zp64(t);
-		UnivariatePolynomialZp64[] components = new UnivariatePolynomialZp64[(int)n];
-		for(int i = 0; i < n; i++)
-		{
-			long[] npoly3 = new long[(int)n+1];
-			npoly3[0]= -rootsOfUnity[i];
-			npoly3[1] = 1L;
-			components[i] = UnivariatePolynomialZp64.create(t,npoly3);
-		}
-
-		UnivariatePolynomialZp64[] bases = new UnivariatePolynomialZp64[(int)n];
-		for(int i = 0; i < n; i++)
-		{
-			bases[i] = UnivariatePolynomialZp64.one(cfRing);
-			for(int k = 0; k < n; k++)
-			{
-				if(k==i) { continue;}
-				bases[i] = bases[i].multiply(components[k]);
-			}
-			long value = bases[i].evaluate(rootsOfUnity[i]);
-			long inv = cfRing.reciprocal(value);
-			bases[i] = bases[i].multiply(inv);
-		}
-		return bases;
-	}
-
-	public UnivariatePolynomialZp64 generateSmallPTPolynomial()
-	{
-		return generateSmallPolynomial(params.polynomialModulusExponent, params.plainTextModulus);
+		return decode(decrypt(ct, pk));
 	}
 	
-	public UnivariatePolynomialZp64 generateSmallCTPolynomial()
+	/**
+	 * Add two ciphertexts and return a new ciphertext with the result
+	 * 
+	 * @param ct1 first operand
+	 * @param ct2 second operand
+	 * @return new ciphertext with the result
+	 */
+	FVCipherText add(FVCipherText ct1, FVCipherText ct2)
 	{
-		return generateSmallPolynomial(params.polynomialModulusExponent, params.coefficientModulus);
-	}
-	
-	public UnivariatePolynomialZp64  generaateUniformCTPolynomial()
-	{
-		return generateUniformPolynomial(params.polynomialModulusExponent, params.coefficientModulus);
-	}
-	
-	public UnivariatePolynomialZp64 generateNoiseCTPolynomial()
-	{
-		// 9.4 magic number in the following comes from the initial FV paper as a bound where < 2-64 chance of hitting an integer outside this range.
-		return generateNoisePolynomial(params.polynomialModulusExponent, params.coefficientModulus, params.noiseStandardDeviation, 9.4*params.noiseStandardDeviation);
+		FVCipherText ret = new FVCipherText(ct1);
+		ret.addTo(ct2);
+		return ret;
 	}
 
-	
-	// Static implementation methods for general parameters
-	
-	public static UnivariatePolynomialZp64 generateSmallPolynomial(long n, long t)
+	/**
+	 * Multiply two ciphertexts and return a new ciphertext with the result
+	 * 
+	 * @param ct1 first operand
+	 * @param ct2 second operand
+	 * @return new ciphertext with the result
+	 */
+	FVCipherText multiply(FVCipherText ct1, FVCipherText ct2)
 	{
-		long[] randomElements = new long[(int)n];
-		for(int i = 0; i < n; i++)
-		{
-			randomElements[i] = (long)sec.nextInt(3) - 1L; // -1,0,1 randomly distributed
-		}
-		return UnivariatePolynomialZp64.create(t, randomElements);
-	}
-	
-	public static UnivariatePolynomialZp64 generateUniformPolynomial(long n, long t)
-	{
-		long[] randomElements = new long[(int)n];
-		for(int i = 0; i < n; i++)
-		{
-			randomElements[i] = (long)sec.nextInt((int)t); 
-		}
-		return UnivariatePolynomialZp64.create(t, randomElements);
+		FVCipherText ret = new FVCipherText(ct1);
+		ret.multiplyBy(ct2);
+		return ret;
 	}
 
-	public static UnivariatePolynomialZp64 generateNoisePolynomial(long n, long t, double sigma, double sigmamax)
-	{
-		if(sigma <= 0) throw new IllegalArgumentException("Negative noise sigma used");
-		if(sigmamax <= 0) throw new IllegalArgumentException("Negative noise sigmamax used");
-		
-		long[] randomElements = new long[(int)n];
-		double range = sigmamax / sigma;
-		for(int i = 0; i < n; i++)
-		{		
-			double gv = 2*range;
-			while(Math.abs(gv) > range)
-				gv = sec.nextGaussian();
-			randomElements[i] = Math.round(gv * sigma); // round to nearest long
-		}
-		return UnivariatePolynomialZp64.create(t, randomElements);		
-	}
-
-	
 	
 }

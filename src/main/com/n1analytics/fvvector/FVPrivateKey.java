@@ -14,12 +14,12 @@ import cc.redberry.rings.poly.univar.*;
 public class FVPrivateKey {
 	
 	private final UnivariatePolynomialZp64 privateKeyPolynomial;
-	private FVParameters params;
+	FVParameters params;
 	
-	FVPrivateKey(FVContext pgen)
+	FVPrivateKey(FVParameters params)
 	{
-		params = pgen.params;
-		privateKeyPolynomial = pgen.generateSmallCTPolynomial();
+		this.params = params;
+		this.privateKeyPolynomial = params.generateSmallCTPolynomial();
 	}		
 		
 	UnivariatePolynomialZp64 key()
