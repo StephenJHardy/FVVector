@@ -10,7 +10,8 @@ public class FVBenchmark {
 		FVParameters ps = FVParameters.generateParameterSet(FVParameters.SecurityParam.BITS_128, n, ptBits, ctBits-ptBits);
 		FVPrivateKey privKey = new FVPrivateKey(ps);		
 		FVPublicKey pubKey = new FVPublicKey(privKey);
-		FVContext context = new FVContext(pubKey); 
+		FVRelinearisationKey relinKey = new FVRelinearisationKey(privKey);
+		FVContext context = new FVContext(pubKey, relinKey); 
 
 		SecureRandom rand = new SecureRandom();
 		
@@ -132,6 +133,22 @@ public class FVBenchmark {
 		ops = n * 1000.0 / duration ;
 		System.out.println("Addition encrypted: " + duration  + " ms (" +  ops + " ops/s)");
 
+		// Relinearised multiplication
+		ct1 = context.encrypt(data1);
+		ct2 = context.encrypt(data2);
+		
+		startTime = System.nanoTime();
+		for(int i = 0; i < nRep; i++)
+		{
+			FVCipherText ct3 = context.multiplyAndRelinearise(ct1, ct2);
+		}
+		
+		endTime = System.nanoTime();
+		duration = ((double)endTime - (double)startTime)/nRep/1000000.0;
+		
+		ops = n * 1000.0 / duration ;
+		System.out.println("Relinearised multiplication encrypted: " + duration  + " ms (" +  ops + " ops/s)");
+
 		// Multiplication
 		ct1 = context.encrypt(data1);
 		ct2 = context.encrypt(data2);
@@ -147,6 +164,7 @@ public class FVBenchmark {
 		
 		ops = n * 1000.0 / duration ;
 		System.out.println("Multiplication encrypted: " + duration  + " ms (" +  ops + " ops/s)");
+
 		
 		// Addition unencrypted
 		ct1 = context.encrypt(data1);

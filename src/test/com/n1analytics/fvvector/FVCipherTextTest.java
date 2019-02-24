@@ -153,7 +153,6 @@ class FVCipherTextTest {
 	@Test
 	void testMultiplyBy() {
 		FVParameters params = FVParameters.generateParameterSet(FVParameters.SecurityParam.BITS_128, 2048, 14, 56-14);
-
 		FVPrivateKey priv = new FVPrivateKey(params);
 		FVPublicKey pub = new FVPublicKey(priv);
 		FVEncoder encoder = new FVEncoder(params);
@@ -185,6 +184,7 @@ class FVCipherTextTest {
 		System.out.println("Noise after: " + r2);
 		
 		assertEquals(3, ct2.size());
+		assertEquals(params.polynomialModulusExponent, ct2.polys.get(0).size());
 		FVPlainText pt3 = ct2.decrypt(priv);
 		long datares[] = pt3.decode(encoder);
 
@@ -193,6 +193,48 @@ class FVCipherTextTest {
 		{
 			assertEquals(params.ptRing.modulus(data1[i] * data2[i]), params.ptRing.modulus(datares[i]));
 		}
+		
+	}
+
+	@Test
+	public void testRelineariseCubic() throws Exception {
+		FVParameters params = FVParameters.FVParamsN2048S128insecure;
+		FVPrivateKey priv = new FVPrivateKey(params);
+		FVPublicKey pub = new FVPublicKey(priv);
+		FVEncoder encoder = new FVEncoder(params);
+
+		SecureRandom rand = new SecureRandom();
+		
+		long data1[] = new long[(int)params.polynomialModulusExponent];
+		long data2[] = new long[(int)params.polynomialModulusExponent];
+		for(int i = 0; i < data1.length; i++)
+		{
+			data1[i] = rand.nextLong() % 10;
+			data2[i] = rand.nextLong() % 10;
+		}
+		
+		FVPlainText pt1 = new FVPlainText();
+		pt1.encode(encoder, data1);
+		FVCipherText ct1 = pt1.encrypt(pub);
+		
+		FVPlainText pt2 = new FVPlainText();
+		pt2.encode(encoder, data2);
+		FVCipherText ct2 = pt2.encrypt(pub);
+		ct2.multiplyBy(ct1);
+
+		FVRelinearisationKey rk = new FVRelinearisationKey(priv);		
+		ct2.relineariseCubic(rk);
+		double r3 = ct2.measureCTNoise(priv);
+		System.out.println("Noise after relin: " + r3);
+		
+		assertEquals(2, ct2.size());
+		FVPlainText pt4 = ct2.decrypt(priv);
+		long dataresrelin[] = pt4.decode(encoder);
+		for(int i = 0; i < data1.length; i++)
+		{
+			assertEquals(params.ptRing.modulus(data1[i] * data2[i]), params.ptRing.modulus(dataresrelin[i]));
+		}
+			
 	}
 
 }

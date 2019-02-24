@@ -76,30 +76,15 @@ public class FVCipherText {
 		if(!privKey.params.equals(this.params))
 			throw new RuntimeException("Decryption key parameters do not match ciphertext parameters");
 		
-		 // c0 + c1 s + ... + c_k s^k
-		UnivariatePolynomialZp64 sum = polys.get(0).clone(); // take a copy
-		UnivariatePolynomialZp64 keypower = privKey.key().clone(); // take a copy
-		for(int i = 1; i < polys.size(); i++)
-		{
-			sum = privKey.params.ctPolyField.add(
-						sum,
-						privKey.params.ctPolyField.multiply(polys.get(i), keypower)
-					);
-			keypower = privKey.params.ctPolyField.multiply(keypower, privKey.key());
-		}
+		UnivariatePolynomialZp64 sum = 
+				PolynomialUtils.dotProducWithPowers(privKey.params.ctPolyField, polys, privKey.key());
 
-		double delta = (double)privKey.params.coefficientModulus / (double)privKey.params.plainTextModulus;
-		long[] res = new long[(int)privKey.params.polynomialModulusExponent];
+		long delta = privKey.params.coefficientModulus / privKey.params.plainTextModulus;
 
-		for(int i = 0; i < res.length; i++)
-		{
-			double tmp = sum.get(i) / delta;
-			res[i] = Math.round(tmp);
-		}
-		
 		FVPlainText ret = new FVPlainText();
-		
-		ret.set(privKey.params.ptPolyField.factory().createFromArray(res));
+		ret.set(
+				PolynomialUtils.dividePolynomialAndRoundInField(privKey.params.ptPolyField, sum, delta)
+				);
 		
 		return ret;
 	}
@@ -157,45 +142,41 @@ public class FVCipherText {
 		int sz = (polys.size() - 1) + (ct2.polys.size() - 1) + 1;
 		long scale = params.coefficientModulus / params.plainTextModulus;
 		
-		// The multiplication must be done in a particular way.
-		// The product of the polynomials needs to be calculated then divided by the ciphertext modulus
-		// before the reduction modulo the polynomial
-		ArrayList< UnivariatePolynomial<BigInteger> > bres = new ArrayList< UnivariatePolynomial<BigInteger> >(sz);
-				
-		for(int i = 0; i < sz; i++)
-		{
-			bres.add(UnivariatePolynomial.zero(Z));
-		}
-		
-		for(int i = 0; i < polys.size(); i++)
-		{
-			UnivariatePolynomial<BigInteger> pb1 = polys.get(i).asPolyZ(true).toBigPoly();
-			
-			for(int j = 0; j < ct2.polys.size(); j++)
-			{				
-				UnivariatePolynomial<BigInteger> pb2 = ct2.polys.get(j).asPolyZ(true).toBigPoly();
-				UnivariatePolynomial<BigInteger> bprod = pb1.clone().multiply(pb2);		
-				UnivariatePolynomial<BigInteger> baccum = bres.get(i+j).add(bprod);
-				bres.set(i+j, baccum);
-			}
-		}
-		for(int i = 0; i < bres.size(); i++)
-		{			
-			UnivariatePolynomial<BigInteger> bp = bres.get(i);
-			for(int j = 0; j < bp.size(); j++)
-			{
-				bp.set(j,bp.get(j).divide(BigInteger.valueOf(scale)));
-			}
-		}
-		
-		polys = new ArrayList< UnivariatePolynomialZp64 >(sz);
-		for(int i = 0; i < bres.size(); i++)
-		{
-			UnivariatePolynomial<BigInteger> bp = bres.get(i);
-			polys.add(i,UnivariatePolynomial.asOverZp64(bp, params.ctRing));
-		}
+		polys =
+				PolynomialUtils.multiplyPolyArraysDivideAndRound(
+						params.ctPolyField,
+						this.polys,
+						ct2.polys,
+						scale
+						);
+		return;
 	}
 
+	/**
+	 * Relinearise this ciphertext from three elements to two
+	 * 
+	 * @param rk the key to use for relinearisation
+	 */
+	void relineariseCubic(FVRelinearisationKey rk)
+	{
+		if(!rk.params.equals(this.params)) 
+			throw new RuntimeException("Ciphertext parameters in relinearisation key do not match");
+		if(polys.size() == 2)
+			throw new RuntimeException("Relinearising a ciphertext with only 2 elements");
+		if(polys.size() > 3)
+			throw new RuntimeException("Relinearising a ciphertext with more than 3 elements - currently unsupported");
+
+		ArrayList< UnivariatePolynomialZp64 > decomp = PolynomialUtils.decomposePolynomial(polys.get(2), params.decompositionBase);
+		
+		UnivariatePolynomialZp64 newc0 =
+				PolynomialUtils.accumulateDotProduct(params.ctPolyField, polys.get(0), rk.polys0, decomp);
+		UnivariatePolynomialZp64 newc1 =
+				PolynomialUtils.accumulateDotProduct(params.ctPolyField, polys.get(1), rk.polys1, decomp);
+				
+		polys.clear();
+		polys.add(newc0);
+		polys.add(newc1);
+	}
 	
 	/**
 	 * Decrypt the cipher text and determine what the maximum deviation from the lattice points 
@@ -210,17 +191,8 @@ public class FVCipherText {
 		if(!privKey.params.equals(this.params))
 			throw new RuntimeException("Decryption key parameters do not match ciphertext parameters");
 		
-		 // c0 + c1 s + ... + c_k s^k
-		UnivariatePolynomialZp64 sum = polys.get(0).clone(); // take a copy
-		UnivariatePolynomialZp64 keypower = privKey.key().clone(); // take a copy
-		for(int i = 1; i < polys.size(); i++)
-		{
-			sum = privKey.params.ctPolyField.add(
-						sum,
-						privKey.params.ctPolyField.multiply(polys.get(i), keypower)
-					);
-			keypower = privKey.params.ctPolyField.multiply(keypower, privKey.key());
-		}
+		UnivariatePolynomialZp64 sum = 
+				PolynomialUtils.dotProducWithPowers(privKey.params.ctPolyField, polys, privKey.key());
 
 		double delta = (double)privKey.params.coefficientModulus / (double)privKey.params.plainTextModulus;
 		long[] res = new long[(int)privKey.params.polynomialModulusExponent];

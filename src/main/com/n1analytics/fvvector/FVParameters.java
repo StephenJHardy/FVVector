@@ -77,25 +77,25 @@ public class FVParameters {
      * A conservative parameter set that gives 128 bits of security and 1024 vector size.
      * Has 16 bits for the plaintext, 29 for the ciphertext, giving q/t of 13106. Enough for encrypt/decrypt, but not enough for much arithmetic
      */
-    public static final FVParameters FVParamsN1024S128  = new FVParameters(SecurityParam.BITS_128, 1024L, 536834866L, 40961L, defaultNoiseSD); //16 bits in t, 29 bits in q
+    public static final FVParameters FVParamsN1024S128  = new FVParameters(SecurityParam.BITS_128, 1024L, 536834866L, 40961L, defaultNoiseSD, 2); //16 bits in t, 29 bits in q
 
     /**
      * A conservative parameter set that gives 128 bits of security and 2048 vector size.
      * Has 32 bits for the plaintext, 56 for the ciphertext, giving q/t of 24 bits.
      */
-    public static final FVParameters FVParamsN2048S128  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, defaultNoiseSD); //19 bits in t, 29 bits in q
+    public static final FVParameters FVParamsN2048S128  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, defaultNoiseSD, 2); //19 bits in t, 29 bits in q
  
     /**
      * A conservative parameter set that gives 128 bits of security and 2048 vector size.
      * Has 16 bits for the plaintext, 40 for the ciphertext, giving q/t of 34 bits.
      */
-    public static final FVParameters FVParamsN2048S128small  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057594037920137L, 40961L, defaultNoiseSD); //16 bits in t, 40 bits in q
+    public static final FVParameters FVParamsN2048S128small  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057594037920137L, 40961L, defaultNoiseSD, 2); //16 bits in t, 40 bits in q
 
      /** 
       * Some insecure parameters - with no noise added to the ciphertexts. Purely here for testing and @todo should be removed.
       */
-    public static final FVParameters FVParamsN1024S128insecure  = new FVParameters(SecurityParam.BITS_128, 1024L, 536834866L, 40961L, 0.0000000001); //16 bits in t, 29 bits in q
-    public static final FVParameters FVParamsN2048S128insecure  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, 0.0000000001); //19 bits in t, 29 bits in q
+    public static final FVParameters FVParamsN1024S128insecure  = new FVParameters(SecurityParam.BITS_128, 1024L, 536834866L, 40961L, 0.0000000001, 2); //16 bits in t, 29 bits in q
+    public static final FVParameters FVParamsN2048S128insecure  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, 0.0000000001, 2); //19 bits in t, 29 bits in q
     
    
     
@@ -104,7 +104,8 @@ public class FVParameters {
 	long plainTextModulus;
 	long polynomialModulusExponent;
 	double noiseStandardDeviation;
-	
+	long decompositionBase;
+	long l;
 
 	/**
 	 *  The following members are defined for convenience. They allow the user to generate polynomials, apply modular arithmetic etc.
@@ -129,13 +130,16 @@ public class FVParameters {
      * @param q            coefficient modulus for encrypted polynomials
      * @param t            coefficient modulus for plaintext polynomials
      * @param sigma        standard deviation of noise polynomials
+     * @param decompBase   base into which coefficients of polynomials are decomposed for computation keys
      */
-	public FVParameters(SecurityParam bos, long n, long q, long t, double sigma)
+	public FVParameters(SecurityParam bos, long n, long q, long t, double sigma, long decompBase)
 	{
-		coefficientModulus = q;
-		polynomialModulusExponent = n;
-		plainTextModulus = t;
-		noiseStandardDeviation = sigma;
+		this.coefficientModulus = q;
+		this.polynomialModulusExponent = n;
+		this.plainTextModulus = t;
+		this.noiseStandardDeviation = sigma;
+		this.decompositionBase = decompBase;
+		this.l = (long)Math.floor(Math.log(q)/Math.log(decompBase));
 		CheckParameterConsistency(bos);
 		ConstructPolynomialFields();
 	}
@@ -176,6 +180,12 @@ public class FVParameters {
 			if(polymodMaxBits192.get(polynomialModulusExponent) < BigInteger.valueOf(coefficientModulus).bitLength())
 				throw new IllegalArgumentException("coefficientModulus too large - insecure");	
 		}
+		
+		if(decompositionBase > coefficientModulus)
+			throw new IllegalArgumentException("Decomposition base smaller than coefficient modulus");
+		
+		if(decompositionBase < 0)
+			throw new IllegalArgumentException("Decomposition base must be positive");
 			
 	}
 	
@@ -212,7 +222,7 @@ public class FVParameters {
 		
 		long t = generatePlainTextModulus(n, numBitsPT);
 		long q = generateCoefficientModulus(t, numBitsPT + numBitsOverhead);
-		return new FVParameters(bos, n, q, t,defaultNoiseSD);
+		return new FVParameters(bos, n, q, t,defaultNoiseSD, 2);
 	}
 
 	

@@ -106,4 +106,39 @@ class FVVectorTest {
 			assertEquals(ps.ptRing.modulus(data1[i] * data2[i]), ps.ptRing.modulus(datares[i]));
 		}
 	}
+	
+	@Test
+	void testRelinearisedEncryptedMultiplication() {
+		
+		FVParameters ps = FVParameters.generateParameterSet(FVParameters.SecurityParam.BITS_128, 2048, 14, 56-14);
+		FVPrivateKey privKey = new FVPrivateKey(ps);		
+		FVPublicKey pubKey = new FVPublicKey(privKey);
+		FVRelinearisationKey relinKey = new FVRelinearisationKey(privKey);
+		FVContext context = new FVContext(pubKey, relinKey); 
+
+		SecureRandom rand = new SecureRandom();
+		
+		long data1[] = new long[(int)ps.polynomialModulusExponent];
+		long data2[] = new long[(int)ps.polynomialModulusExponent];
+		for(int i = 0; i < data1.length; i++)
+		{
+			data1[i] = ps.ptRing.modulus(rand.nextLong());
+			data2[i] = ps.ptRing.modulus(rand.nextLong());
+		}
+		
+		FVCipherText ct1 = context.encrypt(data1);
+		FVCipherText ct2 = context.encrypt(data2);
+		
+		FVCipherText ct3 = context.multiplyAndRelinearise(ct1, ct2);
+
+		long datares[] = context.decryptAndDecode(ct3, privKey);
+
+		for(int i = 0; i < data1.length; i++)
+		{
+//			System.err.println(String.format("%d %d %d %d %d\n",data1[i],data2[i],datares[i],ps.ptRing.modulus(data1[i] + data2[i]),ps.ptRing.modulus(datares[i])));
+			assertEquals(ps.ptRing.modulus(data1[i] * data2[i]), ps.ptRing.modulus(datares[i]));
+		}
+	}
+
+	
 }

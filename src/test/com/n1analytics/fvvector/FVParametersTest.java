@@ -26,27 +26,30 @@ class FVParametersTest {
 		assertThrows(IllegalArgumentException.class, () -> { params.CheckParameterConsistency(SecurityParam.BITS_192); });
 		
 		// bad arguments tests
-		assertThrows(IllegalArgumentException.class, () -> {  new FVParameters(SecurityParam.BITS_128, -1L, 536839176L, 520193L, FVParameters.defaultNoiseSD); });
+		assertThrows(IllegalArgumentException.class, () -> {  new FVParameters(SecurityParam.BITS_128, -1L, 536839176L, 520193L, FVParameters.defaultNoiseSD, 2); });
 
-		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 65536L, 536839176L, 520193L, FVParameters.defaultNoiseSD); });
+		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 65536L, 536839176L, 520193L, FVParameters.defaultNoiseSD, 2); });
 
-		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 1023L, 536839176L, 520193L, FVParameters.defaultNoiseSD); });
+		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 1023L, 536839176L, 520193L, FVParameters.defaultNoiseSD, 2); });
 		
-		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 1024L, -1L, 520193L, FVParameters.defaultNoiseSD); });
+		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 1024L, -1L, 520193L, FVParameters.defaultNoiseSD, 2); });
 		
-		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 1024L, Long.MAX_VALUE, 520193L, FVParameters.defaultNoiseSD); });
+		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 1024L, Long.MAX_VALUE, 520193L, FVParameters.defaultNoiseSD, 2); });
 		
-		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 1024L, 536839176L, 520192L, FVParameters.defaultNoiseSD); });
+		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 1024L, 536839176L, 520192L, FVParameters.defaultNoiseSD, 2); });
 		
-		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 1024L, 536839176L, -1L, FVParameters.defaultNoiseSD); });
+		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 1024L, 536839176L, -1L, FVParameters.defaultNoiseSD, 2); });
 		
-		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 1024L, 536839176L, Long.MAX_VALUE, FVParameters.defaultNoiseSD); });
+		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 1024L, 536839176L, Long.MAX_VALUE, FVParameters.defaultNoiseSD, 2); });
 
-		assertThrows(IllegalArgumentException.class, () -> {  new FVParameters(SecurityParam.BITS_128, 1024L, 536839175L, 520193L, FVParameters.defaultNoiseSD); });
+		assertThrows(IllegalArgumentException.class, () -> {  new FVParameters(SecurityParam.BITS_128, 1024L, 536839175L, 520193L, FVParameters.defaultNoiseSD, 2); });
 
-		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 1024L, 1073542130L, 1062913L, FVParameters.defaultNoiseSD); });
+		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 1024L, 1073542130L, 1062913L, FVParameters.defaultNoiseSD, 2); });
 
-	}
+		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 1024L, 536839176L, 520193L, FVParameters.defaultNoiseSD, -1); });
+
+		assertThrows(IllegalArgumentException.class, () -> { new FVParameters(SecurityParam.BITS_128, 1024L, 536839176L, 520193L, FVParameters.defaultNoiseSD, 536839177L); });
+}
 
 	@Test
 	public void testGenerateCongruentPrime() throws Exception {

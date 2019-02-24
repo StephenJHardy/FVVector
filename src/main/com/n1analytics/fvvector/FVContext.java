@@ -19,6 +19,8 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 public class FVContext {
 
 	public FVPublicKey publicKey;
+	public FVRelinearisationKey relinKey;
+	boolean canRelinearise;
 	private static final SecureRandom sec = new SecureRandom();
 	private FVEncoder encoder;
 	
@@ -33,10 +35,27 @@ public class FVContext {
 	FVContext(FVPublicKey publicKey)
 	{
 		this.publicKey = publicKey;
+		this.canRelinearise = false;
 		encoder = new FVEncoder(publicKey.params);
 	}
 
+	/**
+	 * 
+	 * Class that combines the ability to encode data into a vector with a public key
+	 * This class allows manipulations of ciphertexts, including multiplication and 
+	 * addition, and relinearisation of ciphertexts
+	 * 
+	 * @param params Parameters of the crypto system
+	 */
+	FVContext(FVPublicKey publicKey, FVRelinearisationKey relinKey)
+	{
+		this.publicKey = publicKey;
+		this.relinKey = relinKey;
+		this.canRelinearise = true;
+		encoder = new FVEncoder(publicKey.params);
+	}
 
+	
 	/**
 	 * Encode a vector of longs into a plaintext according to the encryption
 	 * parameters of this context.
@@ -140,5 +159,21 @@ public class FVContext {
 		return ret;
 	}
 
+	/**
+	 * Multiply two ciphertexts and return a new reliearised ciphertext with the result
+	 * 
+	 * @param ct1 first operand
+	 * @param ct2 second operand
+	 * @return new ciphertext with the relinearised result
+	 */
+	FVCipherText multiplyAndRelinearise(FVCipherText ct1, FVCipherText ct2)
+	{
+		FVCipherText ret = new FVCipherText(ct1);
+		ret.multiplyBy(ct2);
+		ret.relineariseCubic(this.relinKey);
+		return ret;
+	}
+	
+	
 	
 }
