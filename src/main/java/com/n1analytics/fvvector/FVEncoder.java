@@ -58,9 +58,11 @@ public class FVEncoder {
 		if(values.length != params.polynomialModulusExponent) throw new RuntimeException("incorrect size of array for encoding");
 		
 		UnivariatePolynomialZp64 res = UnivariatePolynomialZp64.zero(params.plainTextModulus);
+		UnivariatePolynomialZp64 tmp;
 		for(int i = 0; i < values.length; i++)
 		{
-			res = res.add(params.ptPolyField.multiply(bases[i],values[i]));
+			tmp = params.ptPolyField.multiply(bases[i],values[i]);
+			res = res.add(tmp);
 		}
 		return res;
 	}

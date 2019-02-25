@@ -122,9 +122,13 @@ public class FVCipherText {
 		{
 			polys.add(params.ctPolyField.getZero());
 		}
+		UnivariatePolynomialZp64 tmp1;
+		UnivariatePolynomialZp64 tmp2;
 		for(int i = 0; i < ct2.polys.size(); i++)
 		{
-			polys.set(i, polys.get(i).add(ct2.polys.get(i)));
+			tmp1 = ct2.polys.get(i);
+			tmp2 = polys.get(i).add(tmp1);
+			polys.set(i, tmp2);
 		}
 	}
 	
