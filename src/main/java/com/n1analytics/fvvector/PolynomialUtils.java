@@ -265,17 +265,16 @@ public class PolynomialUtils {
 			throw new RuntimeException("array sizes must be matching in accumulateDotProduct");
 
 		UnivariatePolynomialZp64 newp = accumulator.clone();
-		UnivariatePolynomialZp64 tmp1, tmp2;
+		UnivariatePolynomialZp64 tmp1, tmp2, tmp3;
 		for(int i = 0; i < parray1.size(); i++)
 		{
 			tmp1 = parray1.get(i);
 			tmp2 = parray2.get(i);
-			newp = newp.add( 
-					field.multiply(
-							tmp1,
-							tmp2
-						)
-					);
+			tmp3 = field.multiply(
+					tmp1,
+					tmp2
+			);
+			newp = newp.add(tmp3);
 		}
 		return newp;
 	}
