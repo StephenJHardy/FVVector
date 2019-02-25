@@ -38,11 +38,11 @@ node() {
   }
   
   
-\\  if (env.BRANCH_NAME == "develop") {
-\\    stage("deploy") {
-\\      mavenUtils.mavenDeploy()
-\\    }
-\\  }
+//  if (env.BRANCH_NAME == "develop") {
+//    stage("deploy") {
+//      mavenUtils.mavenDeploy()
+//    }
+//  }
   
   // And finally send the success status to github.
   gitCommit.setSuccessStatus(GIT_CONTEXT)
