@@ -120,6 +120,19 @@ public class PolynomialUtils {
 	}
 
 	
+	static SecureRandom getSecureRandom()
+	{
+		SecureRandom sec = null;
+//		try
+//		{
+//			sec = SecureRandom.getInstanceStrong();
+//		} catch(NoSuchAlgorithmException nse)
+//		{
+			sec = new SecureRandom();
+//		}
+		return sec;
+	}
+	
 	// Static implementation methods for general parameters
 	
 	/**
@@ -132,14 +145,7 @@ public class PolynomialUtils {
 	 */
 	public static UnivariatePolynomialZp64 generateSmallPolynomial(long n, long t)
 	{
-		SecureRandom sec = null;
-		try
-		{
-			sec = SecureRandom.getInstanceStrong();
-		} catch(NoSuchAlgorithmException nse)
-		{
-			sec = new SecureRandom();
-		}
+		SecureRandom sec = getSecureRandom();
 		
 		long[] randomElements = new long[(int)n];
 		for(int i = 0; i < n; i++)
@@ -159,14 +165,8 @@ public class PolynomialUtils {
 	 */
 	public static UnivariatePolynomialZp64 generateUniformPolynomial(long n, long t)
 	{
-		SecureRandom sec = null;
-		try
-		{
-			sec = SecureRandom.getInstanceStrong();
-		} catch(NoSuchAlgorithmException nse)
-		{
-			sec = new SecureRandom();
-		}
+		SecureRandom sec = getSecureRandom();
+
 		long[] randomElements = new long[(int)n];
 		for(int i = 0; i < n; i++)
 		{
@@ -196,14 +196,7 @@ public class PolynomialUtils {
 		if(sigma <= 0) throw new IllegalArgumentException("Negative noise sigma used");
 		if(sigmamax <= 0) throw new IllegalArgumentException("Negative noise sigmamax used");
 
-		SecureRandom sec = null;
-		try
-		{
-			sec = SecureRandom.getInstanceStrong();
-		} catch(NoSuchAlgorithmException nse)
-		{
-			sec = new SecureRandom();
-		}
+		SecureRandom sec = getSecureRandom();
 
 		long[] randomElements = new long[(int)n];
 		double range = sigmamax / sigma;
