@@ -14,7 +14,8 @@ class FVVectorTest {
 		FVParameters ps = FVParameters.FVParamsN1024S128;
 		FVPrivateKey privKey = new FVPrivateKey(ps);
 		FVPublicKey pubKey = new FVPublicKey(privKey);
-		FVContext context = new FVContext(pubKey);
+		FVEncoder encoder = new FVEncoder(ps);
+		FVContext context = new FVContext(pubKey, encoder);
 		
 		
 		long data[] = new long[(int)ps.polynomialModulusExponent];
@@ -48,7 +49,8 @@ class FVVectorTest {
 		FVParameters ps = FVParameters.FVParamsN1024S128;
 		FVPrivateKey privKey = new FVPrivateKey(ps);		
 		FVPublicKey pubKey = new FVPublicKey(privKey);
-		FVContext context = new FVContext(pubKey);
+		FVEncoder encoder = new FVEncoder(ps);
+		FVContext context = new FVContext(pubKey, encoder);
 		
 		SecureRandom rand = new SecureRandom();
 //		rand.setSeed(1L);
@@ -81,7 +83,8 @@ class FVVectorTest {
 		FVParameters ps = FVParameters.generateParameterSet(FVParameters.SecurityParam.BITS_128, 2048, 14, 56-14);
 		FVPrivateKey privKey = new FVPrivateKey(ps);		
 		FVPublicKey pubKey = new FVPublicKey(privKey);
-		FVContext context = new FVContext(pubKey); 
+		FVEncoder encoder = new FVEncoder(ps);
+		FVContext context = new FVContext(pubKey, encoder); 
 
 		SecureRandom rand = new SecureRandom();
 		
@@ -112,9 +115,7 @@ class FVVectorTest {
 		
 		FVParameters ps = FVParameters.generateParameterSet(FVParameters.SecurityParam.BITS_128, 2048, 14, 56-14);
 		FVPrivateKey privKey = new FVPrivateKey(ps);		
-		FVPublicKey pubKey = new FVPublicKey(privKey);
-		FVRelinearisationKey relinKey = new FVRelinearisationKey(privKey);
-		FVContext context = new FVContext(pubKey, relinKey); 
+		FVContext context = FVContext.BuildDefaultContext(privKey); 
 
 		SecureRandom rand = new SecureRandom();
 		
@@ -139,6 +140,7 @@ class FVVectorTest {
 			assertEquals(ps.ptRing.modulus(data1[i] * data2[i]), ps.ptRing.modulus(datares[i]));
 		}
 	}
+
 
 	
 }

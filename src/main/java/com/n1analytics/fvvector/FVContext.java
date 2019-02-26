@@ -25,6 +25,26 @@ public class FVContext {
 	private FVEncoder encoder;
 	
 	/**
+	 * Builds a context that allows for encryption operations based
+	 * on a private key that is supplied (and includes information
+	 * about the encryption parameters used).
+	 * 
+	 * The private key information is not stored in the context.
+	 * 
+	 * @param privateKey
+	 * @return context to allow encrypted operations to occur.
+	 */
+	public static FVContext BuildDefaultContext(FVPrivateKey privateKey)
+	{
+		FVParameters ps = privateKey.params;
+		FVPublicKey pubKey = new FVPublicKey(privateKey);
+		FVEncoder encoder = new FVEncoder(ps);
+		FVRelinearisationKey relinKey = new FVRelinearisationKey(privateKey);
+		FVContext context = new FVContext(pubKey, encoder, relinKey); 
+		return context;
+	}
+	
+	/**
 	 * 
 	 * Class that combines the ability to encode data into a vector with a public key
 	 * This class allows manipulations of ciphertexts, including multiplication and 
@@ -32,11 +52,11 @@ public class FVContext {
 	 * 
 	 * @param params Parameters of the crypto system
 	 */
-	FVContext(FVPublicKey publicKey)
+	FVContext(FVPublicKey publicKey, FVEncoder encoder)
 	{
 		this.publicKey = publicKey;
 		this.canRelinearise = false;
-		encoder = new FVEncoder(publicKey.params);
+		this.encoder = encoder;
 	}
 
 	/**
@@ -47,12 +67,12 @@ public class FVContext {
 	 * 
 	 * @param params Parameters of the crypto system
 	 */
-	FVContext(FVPublicKey publicKey, FVRelinearisationKey relinKey)
+	FVContext(FVPublicKey publicKey, FVEncoder encoder, FVRelinearisationKey relinKey)
 	{
 		this.publicKey = publicKey;
 		this.relinKey = relinKey;
 		this.canRelinearise = true;
-		encoder = new FVEncoder(publicKey.params);
+		this.encoder = encoder;
 	}
 
 	
@@ -168,6 +188,11 @@ public class FVContext {
 	 */
 	FVCipherText multiplyAndRelinearise(FVCipherText ct1, FVCipherText ct2)
 	{
+		if(!this.canRelinearise)
+		{
+			throw new 
+				RuntimeException("Cannot relinearise using a context without a relinearisation key");
+		}
 		FVCipherText ret = new FVCipherText(ct1);
 		ret.multiplyBy(ct2);
 		ret.relineariseCubic(this.relinKey);
@@ -175,6 +200,12 @@ public class FVContext {
 	}
 	
 
+	/**
+	 * Treating a ciphertext as a N/2 x 2 matrix, swap the rows
+	 * 
+	 * @param input ciphertext to transform
+	 * @return new ciphertext with transformed result
+	 */
 	FVCipherText interchangeSlotVectors(FVCipherText input)
 	{
 		FVCipherText ret = new FVCipherText(publicKey.params);
@@ -183,6 +214,12 @@ public class FVContext {
 		return ret;
 	}
 
+	/**
+	 * Treating a ciphertext as a N/2 x 2 matrix, rotate the rows left
+	 * 
+	 * @param input ciphertext to transform
+	 * @return new ciphertext with transformed result
+	 */
 	FVCipherText rotateSlotsLeft(FVCipherText input, int toLeft)
 	{
 		FVCipherText ret = new FVCipherText(publicKey.params);
@@ -191,6 +228,12 @@ public class FVContext {
 		return ret;		
 	}
 	
+	/**
+	 * Treating a ciphertext as a N/2 x 2 matrix, rotate the rows right
+	 * 
+	 * @param input ciphertext to transform
+	 * @return new ciphertext with transformed result
+	 */
 	FVCipherText rotateSlotsRight(FVCipherText input, int toRight)
 	{
 		FVCipherText ret = new FVCipherText(publicKey.params);

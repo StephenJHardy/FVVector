@@ -10,8 +10,9 @@ public class FVBenchmark {
 		FVParameters ps = FVParameters.generateParameterSet(FVParameters.SecurityParam.BITS_128, n, ptBits, ctBits-ptBits);
 		FVPrivateKey privKey = new FVPrivateKey(ps);		
 		FVPublicKey pubKey = new FVPublicKey(privKey);
+		FVEncoder encoder = new FVEncoder(ps);
 		FVRelinearisationKey relinKey = new FVRelinearisationKey(privKey);
-		FVContext context = new FVContext(pubKey, relinKey); 
+		FVContext context = new FVContext(pubKey, encoder, relinKey); 
 
 		SecureRandom rand = new SecureRandom();
 		
