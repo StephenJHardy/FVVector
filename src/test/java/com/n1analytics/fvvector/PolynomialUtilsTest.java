@@ -7,16 +7,27 @@ import java.util.ArrayList;
 
 import org.junit.jupiter.api.Test;
 
-import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 
 class PolynomialUtilsTest {
 
 	@Test
+	public void testCalculateMappingOfRoots() throws Exception {
+		long map[] = PolynomialUtils.CalculateMappingOfRoots(16L);
+		long groundtruth[] = {1, 29, 9, 5, 17, 13, 25, 21, 31, 3, 23, 27, 15, 19, 7, 11};
+		for(int i = 0; i < map.length; i++)
+			assertEquals(groundtruth[i], map[i]); // Calculated independently
+	}
+
+	
+	
+	@Test
 	public void testCalculateRootsOfUnity() throws Exception {
 		long roots[] = PolynomialUtils.CalculateRootsOfUnity(16L, 97L);
-		assertEquals(roots[0], 19L); // Calculated independently
+		long groundtruth[] = {19, 45, 67, 77, 78, 52, 30, 20, 46, 69, 42, 63, 51, 28, 55, 34};
+		for(int i = 0; i < roots.length; i++)
+			assertEquals(groundtruth[i], roots[i]); // Calculated independently
 	}
 
 	@Test
@@ -175,7 +186,7 @@ class PolynomialUtilsTest {
 		// was not inverse in the field highlighted a bug. This checks for that 
 		// regression
 		long coeffs2[] = {15,19,4,2,1,30};
-		UnivariatePolynomialZp64 p2 = UnivariatePolynomialZp64.create(16, coeffs);
+		UnivariatePolynomialZp64 p2 = UnivariatePolynomialZp64.create(16, coeffs2);
 		long base2 = 2;
 		ArrayList<UnivariatePolynomialZp64> al2 = PolynomialUtils.decomposePolynomial(p2, base2);
 		UnivariatePolynomialZp64 sum2 = p2.createZero();
@@ -481,5 +492,19 @@ class PolynomialUtilsTest {
 		}
 	
 	
+	}
+
+	@Test
+	public void testCoeffTransform() throws Exception {
+		
+		long data[] = {91, 15, 11, 21, 93, 10, 72, 14, 62, 39, 48, 74, 9, 26, 32, 17};
+		UnivariatePolynomialZp64 poly = UnivariatePolynomialZp64.create(97, data);
+		UnivariatePolynomialZp64 poly2 = PolynomialUtils.coeffTransform(poly, 7, 16);
+		long groundTruth[] = {91, 83, 32, 10, 88, 76, 48, 15, 35, 17, 72, 71, 4, 74, 11, 58};
+		
+		for(int i = 0; i < data.length; i++)
+		{
+			assertEquals(poly2.get(i),groundTruth[i]);
+		}
 	}
 }

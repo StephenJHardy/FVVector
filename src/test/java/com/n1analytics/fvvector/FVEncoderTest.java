@@ -95,6 +95,55 @@ class FVEncoderTest {
 		}
 	}
 
+	@Test
+	public void testInterchangeSlots() throws Exception {
+		FVParameters params = FVParameters.FVParamsN1024S128;
+		FVEncoder fve = new FVEncoder(params);
+		
+		long data1[] = new long[(int)params.polynomialModulusExponent];
+		for(int i = 0; i < data1.length; i++)
+		{
+			data1[i] = (long)i;
+		}
+		UnivariatePolynomialZp64 p1 = fve.encode(data1);
+		UnivariatePolynomialZp64 p2 = fve.interchangeSlots(p1);
+		long[] decoded = fve.decode(p2);
+		
+		for(int i = 0; i < data1.length/2; i++)
+		{
+			assertEquals(decoded[i],i + data1.length/2); // got the right value
+			assertEquals(decoded[i + data1.length/2], i);  	
+		}
+		
+		
+	}
+	
+	@Test
+	public void testRotateLeft() throws Exception {
+		FVParameters params = FVParameters.FVParamsN1024S128;
+		FVEncoder fve = new FVEncoder(params);
+		
+		long data1[] = new long[(int)params.polynomialModulusExponent];
+		for(int i = 0; i < data1.length; i++)
+		{
+			data1[i] = (long)(i);
+		}
+		UnivariatePolynomialZp64 p1 = fve.encode(data1);
+		UnivariatePolynomialZp64 p2 = fve.rotateLeft(p1,217);
+		long[] decoded = fve.decode(p2);
+		
+		for(int i = 0; i < data1.length/2; i++)
+		{
+			int i1 = Math.floorMod(i+217, data1.length/2);
+//			System.out.println(" " + decoded[i] + " " + i1);
+			assertEquals(decoded[i],(long)i1); // got the right value
+			assertEquals(decoded[i + data1.length/2], (long)(i1 + data1.length/2));  	
+		}
+		
+		
+	}
+	
+
 	
 //	@Test
 //	void testPart() {

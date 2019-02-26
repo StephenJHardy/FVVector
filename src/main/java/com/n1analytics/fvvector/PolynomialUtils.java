@@ -27,6 +27,37 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 public class PolynomialUtils {
 	
 	/**
+	 * To make rotations of slots work, the roots of unity need to be in
+	 * a particular order, and the substitutions that must happen for the
+	 * a given rotation have to correspond to that order.
+	 * 
+	 * This function returns an ordering of the powers of the generator of 
+	 * the group that gives the right pattern of rotations.
+	 * 
+	 * There is probably some very nice sophisticated (or simple!) bit of 
+	 * maths to make this happen, but I don't know it (yet).
+	 * 
+	 * @param n number of elements in the encoding
+	 * @return an array of the power the generator must be raised to
+	 */
+	public static long[] CalculateMappingOfRoots(long n)
+	{
+		long res[] = new long[(int)n];
+		int halfn = (int)n/2;
+		long twon = 2*n;
+		res[0] = 1;
+		res[halfn] = 2*n - 1;
+		long factor = 2*n - 3;
+		for(int i = 1; i < halfn; i++)
+		{
+			res[i] = Math.floorMod(res[i-1]*factor, twon);
+			res[halfn + i] = Math.floorMod(res[halfn+i-1]*factor, twon);			
+		}
+		return res;
+	}
+	
+	
+	/**
 	 * Calculates a k such that  k^2n mod t == 1 and where k^i mod t != 1 
 	 * for all i != 2n
 	 * Then the other roots of unity are k^(2i+1) mod t, i from 0 to n-1
@@ -63,10 +94,12 @@ public class PolynomialUtils {
 				}
 			}
 		}
+		
+		long [] rootMapping = PolynomialUtils.CalculateMappingOfRoots(n);
 		long [] rootsOfUnity = new long[(int)n];
 		rootsOfUnity[0] = gen;
-		for(long k = 1; k < n; k++)
-			rootsOfUnity[(int)k] = cfRing.powMod(gen, 2L*k + 1L);
+		for(int k = 1; k < (int)n; k++)
+			rootsOfUnity[k] = cfRing.powMod(gen, rootMapping[k]);
 		return rootsOfUnity;
 	}
 
@@ -417,6 +450,20 @@ public class PolynomialUtils {
 		}
 
 		return retval;
+	}
+	
+	public static UnivariatePolynomialZp64 coeffTransform(UnivariatePolynomialZp64 poly, long power, long order)
+	{
+		long val[] = new long[(int)order];
+		for(int i = 0; i < order; i++)
+		{
+			long newLoc = Math.floorMod(i*power, order);
+			long sign = 1;
+			if((Math.floorDiv(i*power, order)&1) == 1)
+				sign = -1;
+			val[(int)newLoc] = poly.get(i)*sign;
+		}
+		return poly.createFromArray(val);
 	}
 	
 }

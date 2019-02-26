@@ -174,6 +174,29 @@ public class FVContext {
 		return ret;
 	}
 	
+
+	FVCipherText interchangeSlotVectors(FVCipherText input)
+	{
+		FVCipherText ret = new FVCipherText(publicKey.params);
+		ret.set(encoder.interchangeSlots(input.polys.get(0)),
+				encoder.interchangeSlots(input.polys.get(1)));
+		return ret;
+	}
+
+	FVCipherText rotateSlotsLeft(FVCipherText input, int toLeft)
+	{
+		FVCipherText ret = new FVCipherText(publicKey.params);
+		ret.set(encoder.rotateLeft(input.polys.get(0), toLeft),
+				encoder.rotateLeft(input.polys.get(1), toLeft));
+		return ret;		
+	}
 	
-	
+	FVCipherText rotateSlotsRight(FVCipherText input, int toRight)
+	{
+		FVCipherText ret = new FVCipherText(publicKey.params);
+		ret.set(encoder.rotateRight(input.polys.get(0), toRight),
+				encoder.rotateRight(input.polys.get(1), toRight));
+		return ret;		
+	}
+
 }

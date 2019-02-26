@@ -21,7 +21,14 @@ public class FVEncoder {
 	 *  There are n of these, where n = params.polynomialModulusExponent
 	 */
 	private long rootsOfUnity[];
+
+	/**
+	 *  These are the powers to which the generator is raised to form the 
+	 *  correct ordering of the roots of unity for the slot rotations to work
+	 */
+	private long generatorPowers[];
 	
+
 	
 	/**
 	 *  The basis functions of the corresponding roots of unity. These are an orthonormal
@@ -42,6 +49,7 @@ public class FVEncoder {
 	FVEncoder(FVParameters params)
 	{
 		this.params = params;
+		this.generatorPowers = PolynomialUtils.CalculateMappingOfRoots(params.polynomialModulusExponent);
 		this.rootsOfUnity = PolynomialUtils.CalculateRootsOfUnity(params.polynomialModulusExponent, params.plainTextModulus);
 		this.bases = PolynomialUtils.CalculateBasisFunctions(params.polynomialModulusExponent, params.plainTextModulus, rootsOfUnity);
 	}		
@@ -86,6 +94,54 @@ public class FVEncoder {
 			res[i] = poly.evaluate(rootsOfUnity[i]);
 		}
 		return res;
+	}
+	
+	/**
+	 * Treat the polynomial as if it is encoding multiple values in a N/2 x 2 array
+	 * Swap the values in the arrays
+	 * 
+	 * @param poly the polynomial to transform
+	 * @return a new polynomial that has had its slots swapped
+	 */
+	UnivariatePolynomialZp64 interchangeSlots(UnivariatePolynomialZp64 poly)
+	{
+		int n2 = generatorPowers.length/2;
+		return PolynomialUtils.coeffTransform(poly, generatorPowers[n2], generatorPowers.length);
+	}
+	
+	/**
+	 * Treat the polynomial as if it is encoding multiple values in a N/2 x 2 array
+	 * Rotate the values in the 2 vectors to the left some number of slots
+	 * 
+	 * @param poly polynomial to rotate
+	 * @param slots number of slots to rotate
+	 * @return
+	 */
+	UnivariatePolynomialZp64 rotateLeft(UnivariatePolynomialZp64 poly, int slots)
+	{
+		if(slots == 0)
+			return poly.copy();
+		
+		int n2 = generatorPowers.length/2;
+		int aslots = Math.floorMod(slots, n2);
+		return PolynomialUtils.coeffTransform(poly, generatorPowers[aslots], generatorPowers.length);
+	}
+
+	/**
+	 * Treat the polynomial as if it is encoding multiple values in a N/2 x 2 array
+	 * Rotate the values in the 2 vectors to the right some number of slots
+	 * 
+	 * @param poly polynomial to rotate
+	 * @param slots number of slots to rotate
+	 * @return
+	 */	UnivariatePolynomialZp64 rotateRight(UnivariatePolynomialZp64 poly, int slots)
+	{
+		if(slots == 0)
+			return poly.copy();
+
+		int n2 = generatorPowers.length/2;
+		int aslots = Math.floorMod(slots, n2);
+		return PolynomialUtils.coeffTransform(poly, generatorPowers[n2 - aslots], generatorPowers.length);
 	}
 	
 }
