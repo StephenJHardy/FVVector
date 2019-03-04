@@ -14,8 +14,8 @@ class FVRelinearisationKeyTest {
 		FVPrivateKey  pk = new FVPrivateKey(ps);
 		FVRelinearisationKey rk = new FVRelinearisationKey(pk);
 		
-		assertEquals(rk.polys0.size(), (int)Math.floor(Math.log(ps.coefficientModulus)/Math.log(2.0))+1);
-		assertEquals(rk.polys1.size(), (int)Math.floor(Math.log(ps.coefficientModulus)/Math.log(2.0))+1);
+		assertEquals(rk.polys0.size(), (int)Math.floor(Math.log(ps.coefficientModulus)/Math.log(ps.decompositionBase))+1);
+		assertEquals(rk.polys1.size(), (int)Math.floor(Math.log(ps.coefficientModulus)/Math.log(ps.decompositionBase))+1);
 		assertEquals(rk.polys0.get(0).coefficientRingCardinality().longValue(), ps.coefficientModulus);
 		assertEquals(rk.polys1.get(0).coefficientRingCardinality().longValue(), ps.coefficientModulus);
 
