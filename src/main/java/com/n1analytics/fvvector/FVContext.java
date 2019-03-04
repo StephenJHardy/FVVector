@@ -20,7 +20,7 @@ public class FVContext {
 
 	public FVPublicKey publicKey;
 	public FVRelinearisationKey relinKey;
-	boolean canRelinearise;
+	public FVRotationKey rotKey;
 	private static final SecureRandom sec = new SecureRandom();
 	private FVEncoder encoder;
 	
@@ -40,25 +40,11 @@ public class FVContext {
 		FVPublicKey pubKey = new FVPublicKey(privateKey);
 		FVEncoder encoder = new FVEncoder(ps);
 		FVRelinearisationKey relinKey = new FVRelinearisationKey(privateKey);
-		FVContext context = new FVContext(pubKey, encoder, relinKey); 
+		FVRotationKey rotKey = new FVRotationKey(privateKey, encoder);
+		FVContext context = new FVContext(pubKey, encoder, relinKey, rotKey); 
 		return context;
 	}
 	
-	/**
-	 * 
-	 * Class that combines the ability to encode data into a vector with a public key
-	 * This class allows manipulations of ciphertexts, including multiplication and 
-	 * addition.
-	 * 
-	 * @param params Parameters of the crypto system
-	 */
-	FVContext(FVPublicKey publicKey, FVEncoder encoder)
-	{
-		this.publicKey = publicKey;
-		this.canRelinearise = false;
-		this.encoder = encoder;
-	}
-
 	/**
 	 * 
 	 * Class that combines the ability to encode data into a vector with a public key
@@ -67,11 +53,11 @@ public class FVContext {
 	 * 
 	 * @param params Parameters of the crypto system
 	 */
-	FVContext(FVPublicKey publicKey, FVEncoder encoder, FVRelinearisationKey relinKey)
+	FVContext(FVPublicKey publicKey, FVEncoder encoder, FVRelinearisationKey relinKey, FVRotationKey rotKey)
 	{
 		this.publicKey = publicKey;
 		this.relinKey = relinKey;
-		this.canRelinearise = true;
+		this.rotKey = rotKey;
 		this.encoder = encoder;
 	}
 
@@ -188,11 +174,6 @@ public class FVContext {
 	 */
 	FVCipherText multiplyAndRelinearise(FVCipherText ct1, FVCipherText ct2)
 	{
-		if(!this.canRelinearise)
-		{
-			throw new 
-				RuntimeException("Cannot relinearise using a context without a relinearisation key");
-		}
 		FVCipherText ret = new FVCipherText(ct1);
 		ret.multiplyBy(ct2);
 		ret.relineariseCubic(this.relinKey);
@@ -208,9 +189,9 @@ public class FVContext {
 	 */
 	FVCipherText interchangeSlotVectors(FVCipherText input)
 	{
-		FVCipherText ret = new FVCipherText(publicKey.params);
-		ret.set(encoder.interchangeSlots(input.polys.get(0)),
-				encoder.interchangeSlots(input.polys.get(1)));
+		FVCipherText ret = new FVCipherText(input);
+		ret.rotate(encoder, encoder.interchangeIndex());
+		ret.rotationRekey(rotKey, encoder, encoder.interchangeIndex());
 		return ret;
 	}
 
@@ -222,10 +203,10 @@ public class FVContext {
 	 */
 	FVCipherText rotateSlotsLeft(FVCipherText input, int toLeft)
 	{
-		FVCipherText ret = new FVCipherText(publicKey.params);
-		ret.set(encoder.rotateLeft(input.polys.get(0), toLeft),
-				encoder.rotateLeft(input.polys.get(1), toLeft));
-		return ret;		
+		FVCipherText ret = new FVCipherText(input);
+		ret.rotate(encoder, encoder.leftRotateIndex(toLeft));
+		ret.rotationRekey(rotKey, encoder, encoder.leftRotateIndex(toLeft));
+		return ret;
 	}
 	
 	/**
@@ -236,10 +217,10 @@ public class FVContext {
 	 */
 	FVCipherText rotateSlotsRight(FVCipherText input, int toRight)
 	{
-		FVCipherText ret = new FVCipherText(publicKey.params);
-		ret.set(encoder.rotateRight(input.polys.get(0), toRight),
-				encoder.rotateRight(input.polys.get(1), toRight));
-		return ret;		
+		FVCipherText ret = new FVCipherText(input);
+		ret.rotate(encoder, encoder.rightRotateIndex(toRight));
+		ret.rotationRekey(rotKey, encoder, encoder.rightRotateIndex(toRight));
+		return ret;
 	}
 
 }

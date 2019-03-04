@@ -12,7 +12,8 @@ public class FVBenchmark {
 		FVPublicKey pubKey = new FVPublicKey(privKey);
 		FVEncoder encoder = new FVEncoder(ps);
 		FVRelinearisationKey relinKey = new FVRelinearisationKey(privKey);
-		FVContext context = new FVContext(pubKey, encoder, relinKey); 
+		FVRotationKey rotKey = new FVRotationKey(privKey, encoder);
+		FVContext context = new FVContext(pubKey, encoder, relinKey, rotKey); 
 
 		SecureRandom rand = new SecureRandom();
 		

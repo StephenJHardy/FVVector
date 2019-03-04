@@ -77,25 +77,25 @@ public class FVParameters {
      * A conservative parameter set that gives 128 bits of security and 1024 vector size.
      * Has 16 bits for the plaintext, 29 for the ciphertext, giving q/t of 13106. Enough for encrypt/decrypt, but not enough for much arithmetic
      */
-    public static final FVParameters FVParamsN1024S128  = new FVParameters(SecurityParam.BITS_128, 1024L, 536834866L, 40961L, defaultNoiseSD, 2); //16 bits in t, 29 bits in q
+    public static final FVParameters FVParamsN1024S128  = new FVParameters(SecurityParam.BITS_128, 1024L, 536834866L, 40961L, defaultNoiseSD, 8); //16 bits in t, 29 bits in q
 
     /**
      * A conservative parameter set that gives 128 bits of security and 2048 vector size.
      * Has 32 bits for the plaintext, 56 for the ciphertext, giving q/t of 24 bits.
      */
-    public static final FVParameters FVParamsN2048S128  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, defaultNoiseSD, 2); //19 bits in t, 29 bits in q
+    public static final FVParameters FVParamsN2048S128  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, defaultNoiseSD, 8); //19 bits in t, 29 bits in q
  
     /**
      * A conservative parameter set that gives 128 bits of security and 2048 vector size.
      * Has 16 bits for the plaintext, 40 for the ciphertext, giving q/t of 34 bits.
      */
-    public static final FVParameters FVParamsN2048S128small  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057594037920137L, 40961L, defaultNoiseSD, 2); //16 bits in t, 40 bits in q
+    public static final FVParameters FVParamsN2048S128small  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057594037920137L, 40961L, defaultNoiseSD, 8); //16 bits in t, 40 bits in q
 
      /** 
       * Some insecure parameters - with no noise added to the ciphertexts. Purely here for testing and @todo should be removed.
       */
-    public static final FVParameters FVParamsN1024S128insecure  = new FVParameters(SecurityParam.BITS_128, 1024L, 536834866L, 40961L, 0.0000000001, 2); //16 bits in t, 29 bits in q
-    public static final FVParameters FVParamsN2048S128insecure  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, 0.0000000001, 2); //19 bits in t, 29 bits in q
+    public static final FVParameters FVParamsN1024S128insecure  = new FVParameters(SecurityParam.BITS_128, 1024L, 536834866L, 40961L, 0.0000000001, 8); //16 bits in t, 29 bits in q
+    public static final FVParameters FVParamsN2048S128insecure  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, 0.0000000001, 8); //19 bits in t, 29 bits in q
     
    
     
@@ -222,7 +222,7 @@ public class FVParameters {
 		
 		long t = generatePlainTextModulus(n, numBitsPT);
 		long q = generateCoefficientModulus(t, numBitsPT + numBitsOverhead);
-		return new FVParameters(bos, n, q, t,defaultNoiseSD, 2);
+		return new FVParameters(bos, n, q, t,defaultNoiseSD, 8);
 	}
 
 	

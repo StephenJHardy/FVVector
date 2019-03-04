@@ -26,7 +26,7 @@ public class FVEncoder {
 	 *  These are the powers to which the generator is raised to form the 
 	 *  correct ordering of the roots of unity for the slot rotations to work
 	 */
-	private long generatorPowers[];
+	public long generatorPowers[];
 	
 
 	
@@ -97,6 +97,43 @@ public class FVEncoder {
 	}
 	
 	/**
+	 * Returns the index of the encoder generator that swaps the rows of the vector
+	 * when treating it as a N/2 x 2 array
+	 * 
+	 * @return index
+	 */
+	int interchangeIndex()
+	{
+		return generatorPowers.length/2;
+	}
+
+	/**
+	 * Returns the index of the encoder generator that rotates the vector
+	 * when treating it as a N/2 x 2 array
+	 * 
+	 * @param amount how many steps
+	 * @return index 
+	 */
+	int leftRotateIndex(int amount)
+	{
+		int n2 = generatorPowers.length/2;
+		return Math.floorMod(amount, n2);
+	}
+
+	/**
+	 * Returns the index of the encoder generator that rotates the vector
+	 * when treating it as a N/2 x 2 array
+	 * 
+	 * @param amount how many steps
+	 * @return index 
+	 */
+	int rightRotateIndex(int amount)
+	{
+		int n2 = generatorPowers.length/2;
+		return n2 - Math.floorMod(amount, n2);
+	}
+	
+	/**
 	 * Treat the polynomial as if it is encoding multiple values in a N/2 x 2 array
 	 * Swap the values in the arrays
 	 * 
@@ -108,6 +145,23 @@ public class FVEncoder {
 		int n2 = generatorPowers.length/2;
 		return PolynomialUtils.coeffTransform(poly, generatorPowers[n2], generatorPowers.length);
 	}
+
+	/**
+	 * Treat the polynomial as if it is encoding multiple values in a N/2 x 2 array
+	 * Rotate the values according to the power of the generator stored in encoder
+	 * 
+	 * @param poly polynomial to transform
+	 * @param index index of rotation to use
+	 * @return
+	 */
+	UnivariatePolynomialZp64 transformSlots(UnivariatePolynomialZp64 poly, int index)
+	{
+		if(index <= 0)
+			return poly.copy();
+		
+		return PolynomialUtils.coeffTransform(poly, generatorPowers[index], generatorPowers.length);
+	}
+
 	
 	/**
 	 * Treat the polynomial as if it is encoding multiple values in a N/2 x 2 array

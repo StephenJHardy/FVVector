@@ -13,9 +13,7 @@ class FVVectorTest {
 		
 		FVParameters ps = FVParameters.FVParamsN1024S128;
 		FVPrivateKey privKey = new FVPrivateKey(ps);
-		FVPublicKey pubKey = new FVPublicKey(privKey);
-		FVEncoder encoder = new FVEncoder(ps);
-		FVContext context = new FVContext(pubKey, encoder);
+		FVContext context = FVContext.BuildDefaultContext(privKey);
 		
 		
 		long data[] = new long[(int)ps.polynomialModulusExponent];
@@ -48,9 +46,7 @@ class FVVectorTest {
 		
 		FVParameters ps = FVParameters.FVParamsN1024S128;
 		FVPrivateKey privKey = new FVPrivateKey(ps);		
-		FVPublicKey pubKey = new FVPublicKey(privKey);
-		FVEncoder encoder = new FVEncoder(ps);
-		FVContext context = new FVContext(pubKey, encoder);
+		FVContext context = FVContext.BuildDefaultContext(privKey);
 		
 		SecureRandom rand = new SecureRandom();
 //		rand.setSeed(1L);
@@ -82,9 +78,7 @@ class FVVectorTest {
 		
 		FVParameters ps = FVParameters.generateParameterSet(FVParameters.SecurityParam.BITS_128, 2048, 14, 56-14);
 		FVPrivateKey privKey = new FVPrivateKey(ps);		
-		FVPublicKey pubKey = new FVPublicKey(privKey);
-		FVEncoder encoder = new FVEncoder(ps);
-		FVContext context = new FVContext(pubKey, encoder); 
+		FVContext context = FVContext.BuildDefaultContext(privKey);
 
 		SecureRandom rand = new SecureRandom();
 		
@@ -141,6 +135,30 @@ class FVVectorTest {
 		}
 	}
 
+	@Test
+	void testRotationOfCiphertexts() {
+		FVParameters ps = FVParameters.FVParamsN1024S128;
+		FVPrivateKey privKey = new FVPrivateKey(ps);		
+		FVContext context = FVContext.BuildDefaultContext(privKey); 
+		
+		long data1[] = new long[(int)ps.polynomialModulusExponent];
+		for(int i = 0; i < data1.length; i++)
+		{
+			data1[i] = i;
+		}
+		
+		FVCipherText ct1 = context.encrypt(data1);
+		FVCipherText ct2 = context.interchangeSlotVectors(ct1);
+		
+		long[] decoded1 = context.decryptAndDecode(ct1, privKey);
+		long[] decoded2 = context.decryptAndDecode(ct2, privKey);
+		
+		for(int i = 0; i < data1.length/2; i++)
+		{
+			assertEquals(decoded1[i],decoded2[i + data1.length/2]); 
+			assertEquals(decoded1[i + data1.length/2], decoded2[i]);  	
+		}
 
+	}
 	
 }

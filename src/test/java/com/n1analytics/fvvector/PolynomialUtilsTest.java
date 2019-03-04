@@ -110,7 +110,7 @@ class PolynomialUtilsTest {
 		UnivariatePolynomialZp64 sp = PolynomialUtils.generateUniformPolynomial(n, t);
 		assertEquals(sp.coefficientRingCardinality().longValue(), t);
 		assertEquals(sp.degree(), n-1);		 // 1/97 this will fail if top coefficient is zero
-		// not testing for uniformity here...
+		// @todo not testing for uniformity here...
 	}
 	
 	
@@ -380,62 +380,6 @@ class PolynomialUtilsTest {
 			
 	}
 
-//	@Test
-//	public void testMultiplyPolyArraysDivideAndRoundHarder() throws Exception {
-//
-//		long polys1dat[][] = {{1458432931, 1173437195, 179479392, 1056868531, 1459955958, 
-//			  632124503, 686379211, 163624770, 99410419, 1256173979, 1565436048, 
-//			  632367175, 351676046, 1583909151, 752380704, 
-//			  660124871}, {1290867504, 877530377, 85644481, 867464252, 130614303, 
-//			  429903933, 445646493, 281336431, 930357665, 158842477, 110632145, 
-//			  635324217, 639104967, 354448992, 1483801975, 1011307136}};
-//		long polys2dat[][] = {{1096630608, 1049230258, 679069701, 605434728, 1429414625, 255830449,
-//			   848989006, 936724135, 843453415, 1079292505, 26291644, 1271341684, 
-//			   634065915, 3611514, 812261168, 765873246}, {887744298, 91250766, 
-//			   1599260473, 1262457923, 394728916, 636323979, 363021822, 1101912263,
-//			    911238960, 200773403, 1312070313, 1228149821, 135041727, 811667641,
-//			    658707073, 1148465211}};
-//		long modulus1 = 1627389952L;
-//		long modulus2 = 1627389952L;
-//	
-//		ArrayList<UnivariatePolynomialZp64> polys1 = 
-//				new ArrayList<UnivariatePolynomialZp64>(2);
-//		ArrayList<UnivariatePolynomialZp64> polys2 = 
-//				new ArrayList<UnivariatePolynomialZp64>(2);
-//
-//		polys1.add(UnivariatePolynomialZp64.create(modulus2,polys1dat[0]));
-//		polys1.add(UnivariatePolynomialZp64.create(modulus2,polys1dat[1]));
-//		polys2.add(UnivariatePolynomialZp64.create(modulus2,polys2dat[0]));
-//		polys2.add(UnivariatePolynomialZp64.create(modulus2,polys2dat[1]));
-//
-//		int polyorder = 16;
-//		FiniteField<UnivariatePolynomialZp64> field = getGaloisField(modulus2, polyorder);
-//
-//		
-//		ArrayList<UnivariatePolynomialZp64> res 
-//			= PolynomialUtils.multiplyPolyArraysDivideAndRound(
-//				field, polys1, polys2, modulus2/modulus1);
-//		
-//		long groundtruth[][] = {{96569399, 207421375, 1099723857, 580855771, 1231527901, 287131691, 
-//			  709211475, 411717495, 179218409, 1448591250, 1440568259, 1125569260,
-//			   1618670752, 1082203000, 392647691, 101014297}, {449125526, 
-//			  970380282, 102991802, 413472876, 1327342996, 1108461176, 1350073806,
-//			   866478224, 869813340, 1497672030, 754417128, 1000638926, 51889770, 
-//			  1209819178, 93180338, 1189482498}, {1364619653, 366683175, 
-//			  1253415189, 1394241396, 1171919737, 936722721, 994027772, 190780551,
-//			   740485596, 198316344, 1258542511, 1422881914, 473623753, 414181226,
-//			   1340888604, 345951120}};
-//	
-//		for(int i = 0 ; i < 3; i++)
-//		{
-//			for(int j = 0; j < 16; j++)
-//			{
-//				assertEquals(groundtruth[i][j], res.get(i).get(j));
-//			}
-//		}
-//	
-//	
-//	}
 	
 	@Test
 	public void testMultiplyPolyArraysDivideAndRound() throws Exception {

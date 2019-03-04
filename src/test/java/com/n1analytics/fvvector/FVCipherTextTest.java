@@ -237,4 +237,37 @@ class FVCipherTextTest {
 			
 	}
 
+	@Test
+	public void testRotate() throws Exception {
+		FVParameters ps = FVParameters.FVParamsN1024S128;
+		FVPrivateKey privKey = new FVPrivateKey(ps);		
+		FVPublicKey pubKey = new FVPublicKey(privKey);
+		FVEncoder encoder = new FVEncoder(ps);
+		FVRotationKey rotKey = new FVRotationKey(privKey, encoder);
+		
+		long data1[] = new long[(int)ps.polynomialModulusExponent];
+		for(int i = 0; i < data1.length; i++)
+		{
+			data1[i] = i;
+		}
+		
+		FVPlainText pt1 = new FVPlainText();
+		pt1.encode(encoder, data1);
+		
+		FVCipherText ct1 = pt1.encrypt(pubKey);
+
+		FVCipherText ct2 = new FVCipherText(ct1);
+		ct2.rotate(encoder, encoder.interchangeIndex());
+		ct2.rotationRekey(rotKey, encoder, encoder.interchangeIndex());
+		
+		long[] decoded1 = ct1.decrypt(privKey).decode(encoder);
+		long[] decoded2 = ct2.decrypt(privKey).decode(encoder);
+		
+		for(int i = 0; i < data1.length/2; i++)
+		{
+			assertEquals(decoded1[i],decoded2[i + data1.length/2]); 
+			assertEquals(decoded1[i + data1.length/2], decoded2[i]);  	
+		}
+	}
+
 }

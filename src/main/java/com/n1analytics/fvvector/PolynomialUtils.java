@@ -206,8 +206,8 @@ public class PolynomialUtils {
 		   long bits, val; // FROM https://stackoverflow.com/questions/2546078/java-random-long-number-in-0-x-n-range
 		   do {
 		      bits = (sec.nextLong() << 1) >>> 1;
-		      val = bits % n;
-		   } while (bits-val+(n-1) < 0L);
+		      val = bits % t;
+		   } while (bits-val+(t-1) < 0L);
 		   randomElements[i] = val;
 		}
 		return UnivariatePolynomialZp64.create(t, randomElements);
@@ -452,8 +452,18 @@ public class PolynomialUtils {
 		return retval;
 	}
 	
+	/**
+	 * Makes the transformation x -> x^power for the provided polynomial in
+	 * the field with quotient x^order + 1
+	 * 
+	 * @param poly the polynomial to transform
+	 * @param power the power to raise x to in the transformation
+	 * @param order the order of the quotient polynomial
+	 * @return
+	 */
 	public static UnivariatePolynomialZp64 coeffTransform(UnivariatePolynomialZp64 poly, long power, long order)
 	{
+		// done in the modulus of the poly that is provided.
 		long val[] = new long[(int)order];
 		for(int i = 0; i < order; i++)
 		{

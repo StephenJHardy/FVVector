@@ -212,5 +212,51 @@ public class FVCipherText {
 		
 		return maxDev;
 	}
+
+	/**
+	 * Transform this ciphertext using the given rotation element in the encoder
+	 * 
+	 * @param encoder the encoder for the data stored in the ciphertext
+	 * @param index the element of the basis to usefor the rotation
+	 */
+	void rotate(FVEncoder encoder, int index)
+	{
+		if(polys.size() != 2)
+			throw new RuntimeException("Rotating a ciphertext with other than 2 elements is not implemented");
+
+
+		UnivariatePolynomialZp64 newc0 = encoder.transformSlots(polys.get(0), index);
+		UnivariatePolynomialZp64 newc1 = encoder.transformSlots(polys.get(1), index);
+		
+		polys.clear();
+		polys.add(newc0);
+		polys.add(newc1);
+	}
+
 	
+	
+	/**
+	 * Rekey this ciphertext from a rotation of the secret key back to the secret key
+	 * 
+	 * @param rk the key to use for rekeying
+	 */
+	void rotationRekey(FVRotationKey rk, FVEncoder encoder, int rotation)
+	{
+		if(!rk.params.equals(this.params)) 
+			throw new RuntimeException("Ciphertext parameters in rotation key do not match");
+		if(polys.size() != 2)
+			throw new RuntimeException("Rekeying a ciphertext with other than 2 elements is not implemented");
+
+		ArrayList< UnivariatePolynomialZp64 > decomp = PolynomialUtils.decomposePolynomial(polys.get(1), params.decompositionBase);
+		
+		UnivariatePolynomialZp64 newc0 =
+				PolynomialUtils.accumulateDotProduct(params.ctPolyField, polys.get(0), rk.keys0.get(rotation), decomp);
+		UnivariatePolynomialZp64 newc1 = 			
+				PolynomialUtils.accumulateDotProduct(params.ctPolyField, polys.get(1), rk.keys1.get(rotation), decomp);
+		
+		polys.clear();
+		polys.add(newc0);
+		polys.add(newc1);
+	}
+
 }

@@ -109,6 +109,7 @@ class FVEncoderTest {
 		UnivariatePolynomialZp64 p2 = fve.interchangeSlots(p1);
 		long[] decoded = fve.decode(p2);
 		
+		assertEquals(p2.size(), p1.size());
 		for(int i = 0; i < data1.length/2; i++)
 		{
 			assertEquals(decoded[i],i + data1.length/2); // got the right value
@@ -132,6 +133,7 @@ class FVEncoderTest {
 		UnivariatePolynomialZp64 p2 = fve.rotateLeft(p1,217);
 		long[] decoded = fve.decode(p2);
 		
+		assertEquals(p2.size(), p1.size());
 		for(int i = 0; i < data1.length/2; i++)
 		{
 			int i1 = Math.floorMod(i+217, data1.length/2);
