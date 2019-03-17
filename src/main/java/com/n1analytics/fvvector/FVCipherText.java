@@ -133,6 +133,30 @@ public class FVCipherText {
 	}
 	
 	/**
+	 * Subtract the specified ciphertext from this
+	 * 
+	 * @param ct2 polynomial to add
+	 */
+	void subtractFrom(FVCipherText ct2)
+	{
+		if(!ct2.params.equals(this.params)) 
+			throw new RuntimeException("Ciphertext parameters in subtraction do not match");
+
+		while(polys.size() < ct2.polys.size())
+		{
+			polys.add(params.ctPolyField.getZero());
+		}
+		UnivariatePolynomialZp64 tmp1;
+		UnivariatePolynomialZp64 tmp2;
+		for(int i = 0; i < ct2.polys.size(); i++)
+		{
+			tmp1 = ct2.polys.get(i);
+			tmp2 = polys.get(i).subtract(tmp1);
+			polys.set(i, tmp2);
+		}
+	}
+	
+	/**
 	 * Multiply the this by the specified ciphertext
 	 * 
 	 * @param ct2 the polynomial to multiply by
@@ -156,6 +180,22 @@ public class FVCipherText {
 		return;
 	}
 
+	/**
+	 * Multiply the this by the specified plaintext
+	 * 
+	 * @param pt the plaintext to multiply by
+	 */
+	void multiplyBy(FVPlainText pt)
+	{
+		// @todo: add parameters block to plaintext to make this check correct.
+		if(pt.encoding.size() != this.params.polynomialModulusExponent) 
+			throw new RuntimeException("Plaintext size does not match in multiplication");
+
+		polys = PolynomialUtils.multiplyPolyArrayByPoly(params.ctPolyField, polys, pt.encoding.setModulus(params.coefficientModulus));
+		return;
+	}
+	
+	
 	/**
 	 * Relinearise this ciphertext from three elements to two
 	 * 

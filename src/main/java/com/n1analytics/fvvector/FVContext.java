@@ -108,7 +108,7 @@ public class FVContext {
 	 * @param data the data to encrypt
 	 * @return a cipher text object with the encrypted data
 	 */
-	FVCipherText encrypt(long[] data)
+	FVCipherText encodeAndEncrypt(long[] data)
 	{
 		return encode(data).encrypt(publicKey);
 	}
@@ -152,13 +152,27 @@ public class FVContext {
 	}
 
 	/**
+	 * Subtract the second ciphertext from the first and return a new ciphertext with the result
+	 * 
+	 * @param ct1 first operand
+	 * @param ct2 second operand
+	 * @return new ciphertext with the result
+	 */
+	FVCipherText subtract(FVCipherText ct1, FVCipherText ct2)
+	{
+		FVCipherText ret = new FVCipherText(ct1);
+		ret.subtractFrom(ct2);
+		return ret;
+	}
+
+	/**
 	 * Multiply two ciphertexts and return a new ciphertext with the result
 	 * 
 	 * @param ct1 first operand
 	 * @param ct2 second operand
 	 * @return new ciphertext with the result
 	 */
-	FVCipherText multiply(FVCipherText ct1, FVCipherText ct2)
+	FVCipherText multiplyWithoutRelinearisation(FVCipherText ct1, FVCipherText ct2)
 	{
 		FVCipherText ret = new FVCipherText(ct1);
 		ret.multiplyBy(ct2);
@@ -166,13 +180,13 @@ public class FVContext {
 	}
 
 	/**
-	 * Multiply two ciphertexts and return a new reliearised ciphertext with the result
+	 * Multiply two ciphertexts and return a new relinearised ciphertext with the result
 	 * 
 	 * @param ct1 first operand
 	 * @param ct2 second operand
 	 * @return new ciphertext with the relinearised result
 	 */
-	FVCipherText multiplyAndRelinearise(FVCipherText ct1, FVCipherText ct2)
+	FVCipherText multiply(FVCipherText ct1, FVCipherText ct2)
 	{
 		FVCipherText ret = new FVCipherText(ct1);
 		ret.multiplyBy(ct2);
@@ -180,7 +194,36 @@ public class FVContext {
 		return ret;
 	}
 	
+	/**
+	 * Multiply a ciphertext by a plaintext and return a new ciphertext with the result.
+	 * This does not require relinearisation.
+	 * 
+	 * @param ct1 first operand
+	 * @param pt2 second operand
+	 * @return new ciphertext with the relinearised result
+	 */
+	FVCipherText multiply(FVCipherText ct1, FVPlainText pt2)
+	{
+		FVCipherText ret = new FVCipherText(ct1);
+		ret.multiplyBy(pt2);
+		return ret;
+	}
 
+	/**
+	 * Multiply a plaintext by a ciphertext and return a new ciphertext with the result
+	 * This does not require relinearisation.
+	 * 
+	 * @param pt1 first operand
+	 * @param ct2 second operand
+	 * @return new ciphertext with the relinearised result
+	 */
+	FVCipherText multiply(FVPlainText pt1, FVCipherText ct2)
+	{
+		FVCipherText ret = new FVCipherText(ct2);
+		ret.multiplyBy(pt1);
+		return ret;
+	}
+	
 	/**
 	 * Treating a ciphertext as a N/2 x 2 matrix, swap the rows
 	 * 

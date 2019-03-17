@@ -73,7 +73,7 @@ public class FVBenchmark {
 		System.out.println("Encode and Encryption: " + duration  + " ms (" +  ops + " ops/s)");
 
 		// Decryption
-		FVCipherText ct1 = context.encrypt(data1);
+		FVCipherText ct1 = context.encodeAndEncrypt(data1);
 
 		startTime = System.nanoTime();
 		for(int i = 0; i < nRep; i++)
@@ -88,7 +88,7 @@ public class FVBenchmark {
 		System.out.println("Decryption: " + duration  + " ms (" +  ops + " ops/s)");
 
 		// Decode
-		FVCipherText ct2 = context.encrypt(data1);
+		FVCipherText ct2 = context.encodeAndEncrypt(data1);
 		FVPlainText pt2 = context.decrypt(ct2, privKey);
 		
 		startTime = System.nanoTime();
@@ -104,7 +104,7 @@ public class FVBenchmark {
 		System.out.println("Decode: " + duration  + " ms (" +  ops + " ops/s)");
 
 		// Decode and Decryption
-		ct1 = context.encrypt(data1);
+		ct1 = context.encodeAndEncrypt(data1);
 
 		startTime = System.nanoTime();
 		for(int i = 0; i < nRep; i++)
@@ -120,8 +120,8 @@ public class FVBenchmark {
 		System.out.println("Decryption: " + duration  + " ms (" +  ops + " ops/s)");
 
 		// Addition
-		ct1 = context.encrypt(data1);
-		ct2 = context.encrypt(data2);
+		ct1 = context.encodeAndEncrypt(data1);
+		ct2 = context.encodeAndEncrypt(data2);
 		
 		startTime = System.nanoTime();
 		for(int i = 0; i < nRep; i++)
@@ -136,13 +136,13 @@ public class FVBenchmark {
 		System.out.println("Addition encrypted: " + duration  + " ms (" +  ops + " ops/s)");
 
 		// Relinearised multiplication
-		ct1 = context.encrypt(data1);
-		ct2 = context.encrypt(data2);
+		ct1 = context.encodeAndEncrypt(data1);
+		ct2 = context.encodeAndEncrypt(data2);
 		
 		startTime = System.nanoTime();
 		for(int i = 0; i < nRep; i++)
 		{
-			FVCipherText ct3 = context.multiplyAndRelinearise(ct1, ct2);
+			FVCipherText ct3 = context.multiply(ct1, ct2);
 		}
 		
 		endTime = System.nanoTime();
@@ -152,8 +152,8 @@ public class FVBenchmark {
 		System.out.println("Relinearised multiplication encrypted: " + duration  + " ms (" +  ops + " ops/s)");
 
 		// Multiplication
-		ct1 = context.encrypt(data1);
-		ct2 = context.encrypt(data2);
+		ct1 = context.encodeAndEncrypt(data1);
+		ct2 = context.encodeAndEncrypt(data2);
 		
 		startTime = System.nanoTime();
 		for(int i = 0; i < nRep; i++)
@@ -169,12 +169,12 @@ public class FVBenchmark {
 
 		
 		// Addition unencrypted
-		ct1 = context.encrypt(data1);
+		ct1 = context.encodeAndEncrypt(data1);
 		
 		startTime = System.nanoTime();
 		for(int i = 0; i < nRep; i++)
 		{
-			ct2 = context.encrypt(data2);
+			ct2 = context.encodeAndEncrypt(data2);
 			FVCipherText ct3 = context.add(ct1, ct2);
 		}
 		
@@ -185,12 +185,12 @@ public class FVBenchmark {
 		System.out.println("Addition unencrypted: " + duration  + " ms (" +  ops + " ops/s)");
 
 		// Multiplication unencrypted
-		ct1 = context.encrypt(data1);
+		ct1 = context.encodeAndEncrypt(data1);
 		
 		startTime = System.nanoTime();
 		for(int i = 0; i < nRep; i++)
 		{
-			ct2 = context.encrypt(data2);
+			ct2 = context.encodeAndEncrypt(data2);
 			FVCipherText ct3 = context.multiply(ct1, ct2);
 		}
 		

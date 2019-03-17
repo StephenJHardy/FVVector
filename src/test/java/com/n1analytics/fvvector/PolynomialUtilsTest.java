@@ -451,4 +451,52 @@ class PolynomialUtilsTest {
 			assertEquals(poly2.get(i),groundTruth[i]);
 		}
 	}
+
+
+
+	@Test
+	public void testAccumulateDotProduct() throws Exception {
+		long polysdat[][] = {{1458432931, 1173437195, 179479392, 1056868531, 1459955958, 
+			  632124503, 686379211, 163624770, 99410419, 1256173979, 1565436048, 
+			  632367175, 351676046, 1583909151, 752380704, 
+			  660124871}, {1290867504, 877530377, 85644481, 867464252, 130614303, 
+			  429903933, 445646493, 281336431, 930357665, 158842477, 110632145, 
+			  635324217, 639104967, 354448992, 1483801975, 1011307136}};
+		long polydat[] = {1096630608, 1049230258, 679069701, 605434728, 1429414625, 255830449,
+			   848989006, 936724135, 843453415, 1079292505, 26291644, 1271341684, 
+			   634065915, 3611514, 812261168, 765873246};
+		long modulus1 = 97L;
+		long modulus2 = 1627389952L;
+		ArrayList<UnivariatePolynomialZp64> polys = 
+				new ArrayList<UnivariatePolynomialZp64>(2);
+
+		polys.add(UnivariatePolynomialZp64.create(modulus2,polysdat[0]));
+		polys.add(UnivariatePolynomialZp64.create(modulus2,polysdat[1]));
+		UnivariatePolynomialZp64 poly = UnivariatePolynomialZp64.create(modulus2,polydat);
+
+		int polyorder = 16;
+		FiniteField<UnivariatePolynomialZp64> field = getGaloisField(modulus2, polyorder);
+
+		
+		ArrayList<UnivariatePolynomialZp64> res 
+			= PolynomialUtils.multiplyPolyArrayByPoly(field, polys, poly);
+		
+		long groundtruth[][] = {{96569399, 207421375, 1099723857, 580855771, 1231527901, 287131691, 
+			  709211475, 411717495, 179218409, 1448591250, 1440568259, 1125569260,
+			   1618670752, 1082203000, 392647691, 101014297}, {576884299, 
+			  1131112957, 982631389, 886213686, 856609482, 1619583804, 884752103, 
+			  676508744, 208414254, 1436701871, 284933876, 735200487, 520872757, 
+			  1234055189, 1288104153, 351471617}};
+	
+		for(int i = 0 ; i < 2; i++)
+		{
+			for(int j = 0; j < polyorder; j++)
+			{
+				assertEquals(groundtruth[i][j], res.get(i).get(j));
+			}
+		}
+		
+	
+	
+	}
 }
