@@ -99,7 +99,6 @@ class FVVectorTest {
 
 		for(int i = 0; i < data1.length; i++)
 		{
-//			System.err.println(String.format("%d %d %d %d %d\n",data1[i],data2[i],datares[i],ps.ptRing.modulus(data1[i] + data2[i]),ps.ptRing.modulus(datares[i])));
 			assertEquals(ps.ptRing.modulus(data1[i] * data2[i]), ps.ptRing.modulus(datares[i]));
 		}
 	}

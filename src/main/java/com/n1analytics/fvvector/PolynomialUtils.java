@@ -453,7 +453,7 @@ public class PolynomialUtils {
 	}
 	
 	/**
-	 * Makes the transformation x -> x^power for the provided polynomial in
+	 * Makes the transformation x to x^power for the provided polynomial in
 	 * the field with quotient x^order + 1
 	 * 
 	 * @param poly the polynomial to transform
