@@ -59,8 +59,8 @@ class FVVectorTest {
 			data2[i] = ps.ptRing.modulus(rand.nextLong());
 		}
 		
-		FVCipherText ct1 = context.encrypt(data1);
-		FVCipherText ct2 = context.encrypt(data2);
+		FVCipherText ct1 = context.encodeAndEncrypt(data1);
+		FVCipherText ct2 = context.encodeAndEncrypt(data2);
 		
 		FVCipherText ct3 = context.add(ct1, ct2);
 
@@ -73,6 +73,39 @@ class FVVectorTest {
 		}
 	}
 
+	@Test
+	void testEncryptedSubtraction() {
+		
+		FVParameters ps = FVParameters.FVParamsN1024S128;
+		FVPrivateKey privKey = new FVPrivateKey(ps);		
+		FVContext context = FVContext.BuildDefaultContext(privKey);
+		
+		SecureRandom rand = new SecureRandom();
+//		rand.setSeed(1L);
+		
+		long data1[] = new long[(int)ps.polynomialModulusExponent];
+		long data2[] = new long[(int)ps.polynomialModulusExponent];
+		for(int i = 0; i < data1.length; i++)
+		{
+			data1[i] = ps.ptRing.modulus(rand.nextLong());
+			data2[i] = ps.ptRing.modulus(rand.nextLong());
+		}
+		
+		FVCipherText ct1 = context.encodeAndEncrypt(data1);
+		FVCipherText ct2 = context.encodeAndEncrypt(data2);
+		
+		FVCipherText ct3 = context.subtract(ct1, ct2);
+
+		long datares[] = context.decryptAndDecode(ct3, privKey);
+
+		for(int i = 0; i < data1.length; i++)
+		{
+//			System.err.println(String.format("%d %d %d %d %d\n",data1[i],data2[i],datares[i],ps.ptRing.modulus(data1[i] + data2[i]),ps.ptRing.modulus(datares[i])));
+			assertEquals(ps.ptRing.modulus(data1[i] - data2[i]), ps.ptRing.modulus(datares[i]));
+		}
+	}
+
+	
 	@Test
 	void testEncryptedMultiplication() {
 		
@@ -90,16 +123,15 @@ class FVVectorTest {
 			data2[i] = ps.ptRing.modulus(rand.nextLong());
 		}
 		
-		FVCipherText ct1 = context.encrypt(data1);
-		FVCipherText ct2 = context.encrypt(data2);
+		FVCipherText ct1 = context.encodeAndEncrypt(data1);
+		FVCipherText ct2 = context.encodeAndEncrypt(data2);
 		
-		FVCipherText ct3 = context.multiply(ct1, ct2);
+		FVCipherText ct3 = context.multiplyWithoutRelinearisation(ct1, ct2);
 
 		long datares[] = context.decryptAndDecode(ct3, privKey);
 
 		for(int i = 0; i < data1.length; i++)
 		{
-//			System.err.println(String.format("%d %d %d %d %d\n",data1[i],data2[i],datares[i],ps.ptRing.modulus(data1[i] + data2[i]),ps.ptRing.modulus(datares[i])));
 			assertEquals(ps.ptRing.modulus(data1[i] * data2[i]), ps.ptRing.modulus(datares[i]));
 		}
 	}
@@ -121,16 +153,15 @@ class FVVectorTest {
 			data2[i] = ps.ptRing.modulus(rand.nextLong());
 		}
 		
-		FVCipherText ct1 = context.encrypt(data1);
-		FVCipherText ct2 = context.encrypt(data2);
+		FVCipherText ct1 = context.encodeAndEncrypt(data1);
+		FVCipherText ct2 = context.encodeAndEncrypt(data2);
 		
-		FVCipherText ct3 = context.multiplyAndRelinearise(ct1, ct2);
+		FVCipherText ct3 = context.multiply(ct1, ct2);
 
 		long datares[] = context.decryptAndDecode(ct3, privKey);
 
 		for(int i = 0; i < data1.length; i++)
 		{
-//			System.err.println(String.format("%d %d %d %d %d\n",data1[i],data2[i],datares[i],ps.ptRing.modulus(data1[i] + data2[i]),ps.ptRing.modulus(datares[i])));
 			assertEquals(ps.ptRing.modulus(data1[i] * data2[i]), ps.ptRing.modulus(datares[i]));
 		}
 	}
@@ -147,7 +178,7 @@ class FVVectorTest {
 			data1[i] = i;
 		}
 		
-		FVCipherText ct1 = context.encrypt(data1);
+		FVCipherText ct1 = context.encodeAndEncrypt(data1);
 		FVCipherText ct2 = context.interchangeSlotVectors(ct1);
 		
 		long[] decoded1 = context.decryptAndDecode(ct1, privKey);

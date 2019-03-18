@@ -276,6 +276,35 @@ public class PolynomialUtils {
 		
 	
 	/**
+	 * Multiply an array of polynomials by a fixed polynomial in a field and return the resulting array
+	 * 
+	 * @param field finite field in which to do the operations
+	 * @param parray  array of polynomials
+	 * @param poly polynomial to multiply by
+	 * @return array of polynomials holding the products
+	 */
+	public static ArrayList<UnivariatePolynomialZp64> multiplyPolyArrayByPoly(
+		FiniteField<UnivariatePolynomialZp64> field,
+		ArrayList<UnivariatePolynomialZp64> parray, 
+		UnivariatePolynomialZp64 poly
+		)
+	{
+
+		ArrayList<UnivariatePolynomialZp64> ret = new ArrayList<UnivariatePolynomialZp64>(parray.size());
+		UnivariatePolynomialZp64 tmp1, tmp2, tmp3;
+		for(int i = 0; i < parray.size(); i++)
+		{
+			tmp1 = parray.get(i);
+			tmp2 = field.multiply(
+					tmp1,
+					poly
+			);
+			ret.add(tmp2.clone());
+		}
+		return ret;
+	}
+	
+	/**
 	 * Take the dot product of two arrays of polynomials and accumulate
 	 * the results into a given polynomial. The dot products are accumulation
 	 * are done in the finite field speificied.
@@ -453,7 +482,7 @@ public class PolynomialUtils {
 	}
 	
 	/**
-	 * Makes the transformation x -> x^power for the provided polynomial in
+	 * Makes the transformation x to x^power for the provided polynomial in
 	 * the field with quotient x^order + 1
 	 * 
 	 * @param poly the polynomial to transform
