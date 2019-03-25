@@ -7,23 +7,33 @@ import java.security.SecureRandom;
 import org.junit.jupiter.api.Test;
 
 import com.n1analytics.fvvector.FVParameters.SecurityParam;
+import org.junit.jupiter.api.BeforeAll;
 
 class FVCipherTextTest {
 
+	static FVParameters params;
+	static FVPrivateKey priv;
+	static FVPublicKey pub;
+	static FVEncoder encoder;
+
+	@BeforeAll
+	public static void preClassSetup()
+	{
+		//params = FVParameters.FVParamsN1024S128;
+		params = FVParameters.generateParameterSet(FVParameters.SecurityParam.BITS_128, 2048, 14, 56-14);
+		priv = new FVPrivateKey(params);
+		pub = new FVPublicKey(priv);
+		encoder = new FVEncoder(params);
+	}
+
 	@Test
 	void testFVCipherTextFVParameters() {
-		FVParameters params = FVParameters.FVParamsN1024S128;
 		FVCipherText ct = new FVCipherText(params);
 		assertSame(params, ct.params);
 	}
 
 	@Test
 	void testFVCipherTextFVCipherText() {
-		FVParameters params = FVParameters.FVParamsN1024S128;
-		
-		FVPrivateKey priv = new FVPrivateKey(params);
-		FVPublicKey pub = new FVPublicKey(priv);
-		FVEncoder encoder = new FVEncoder(params);
 
 		SecureRandom rand = new SecureRandom();
 		
@@ -47,12 +57,6 @@ class FVCipherTextTest {
 	@Test
 	public void testMeasureCTNoise() throws Exception {
 		
-		//FVParameters params = FVParameters.FVParamsN2048S128;
-		FVParameters params = FVParameters.FVParamsN1024S128;
-		
-		FVPrivateKey priv = new FVPrivateKey(params);
-		FVPublicKey pub = new FVPublicKey(priv);
-		FVEncoder encoder = new FVEncoder(params);
 
 		SecureRandom rand = new SecureRandom();
 		
@@ -85,11 +89,6 @@ class FVCipherTextTest {
 
 	@Test
 	void testDecrypt() {
-		
-		FVParameters params = FVParameters.FVParamsN1024S128;
-		FVPrivateKey priv = new FVPrivateKey(params);
-		FVPublicKey pub = new FVPublicKey(priv);
-		FVEncoder encoder = new FVEncoder(params);
 
 		SecureRandom rand = new SecureRandom();
 		
@@ -116,11 +115,6 @@ class FVCipherTextTest {
 //
 	@Test
 	void testAddTo() {
-		FVParameters params = FVParameters.FVParamsN1024S128;
-		
-		FVPrivateKey priv = new FVPrivateKey(params);
-		FVPublicKey pub = new FVPublicKey(priv);
-		FVEncoder encoder = new FVEncoder(params);
 
 		SecureRandom rand = new SecureRandom();
 		
@@ -152,12 +146,6 @@ class FVCipherTextTest {
 
 	@Test
 	void testSubtractFrom() {
-		FVParameters params = FVParameters.FVParamsN1024S128;
-		
-		FVPrivateKey priv = new FVPrivateKey(params);
-		FVPublicKey pub = new FVPublicKey(priv);
-		FVEncoder encoder = new FVEncoder(params);
-
 		SecureRandom rand = new SecureRandom();
 		
 		long data1[] = new long[(int)params.polynomialModulusExponent];
@@ -189,10 +177,6 @@ class FVCipherTextTest {
 	
 	@Test
 	void testMultiplyBy() {
-		FVParameters params = FVParameters.generateParameterSet(FVParameters.SecurityParam.BITS_128, 2048, 14, 56-14);
-		FVPrivateKey priv = new FVPrivateKey(params);
-		FVPublicKey pub = new FVPublicKey(priv);
-		FVEncoder encoder = new FVEncoder(params);
 
 		SecureRandom rand = new SecureRandom();
 		
@@ -207,20 +191,13 @@ class FVCipherTextTest {
 		FVPlainText pt1 = new FVPlainText();
 		pt1.encode(encoder, data1);
 		FVCipherText ct1 = pt1.encrypt(pub);
-		double r0 = ct1.measureCTNoise(priv);
-		
+
 		FVPlainText pt2 = new FVPlainText();
 		pt2.encode(encoder, data2);
 		FVCipherText ct2 = pt2.encrypt(pub);
 
-		double r1 = ct2.measureCTNoise(priv);
 		ct2.multiplyBy(ct1);
-		
-		double r2 = ct2.measureCTNoise(priv);
-		System.out.println("Multiply by encrypted");
-		System.out.println("Noise before: " + r1);
-		System.out.println("Noise after: " + r2);
-		
+
 		assertEquals(3, ct2.size());
 		assertEquals(params.polynomialModulusExponent, ct2.polys.get(0).size());
 		FVPlainText pt3 = ct2.decrypt(priv);
@@ -236,10 +213,6 @@ class FVCipherTextTest {
 
 	@Test
 	void testMultiplyByPlaintext() {
-		FVParameters params = FVParameters.generateParameterSet(FVParameters.SecurityParam.BITS_128, 2048, 14, 56-14);
-		FVPrivateKey priv = new FVPrivateKey(params);
-		FVPublicKey pub = new FVPublicKey(priv);
-		FVEncoder encoder = new FVEncoder(params);
 
 		SecureRandom rand = new SecureRandom();
 		
@@ -254,18 +227,12 @@ class FVCipherTextTest {
 		FVPlainText pt1 = new FVPlainText();
 		pt1.encode(encoder, data1);
 		FVCipherText ct1 = pt1.encrypt(pub);
-		double r0 = ct1.measureCTNoise(priv);
-		
+
 		FVPlainText pt2 = new FVPlainText();
 		pt2.encode(encoder, data2);
 
 		ct1.multiplyBy(pt2);
-		
-		double r2 = ct1.measureCTNoise(priv);
-		System.out.println("Multiply by unencrypted");
-		System.out.println("Noise before: " + r0);
-		System.out.println("Noise after: " + r2);
-		
+
 		assertEquals(2, ct1.size());
 		assertEquals(params.polynomialModulusExponent, ct1.polys.get(0).size());
 		FVPlainText pt3 = ct1.decrypt(priv);
@@ -282,10 +249,6 @@ class FVCipherTextTest {
 	
 	@Test
 	public void testRelineariseCubic() throws Exception {
-		FVParameters params = FVParameters.FVParamsN2048S128insecure;
-		FVPrivateKey priv = new FVPrivateKey(params);
-		FVPublicKey pub = new FVPublicKey(priv);
-		FVEncoder encoder = new FVEncoder(params);
 
 		SecureRandom rand = new SecureRandom();
 		
@@ -308,9 +271,7 @@ class FVCipherTextTest {
 
 		FVRelinearisationKey rk = new FVRelinearisationKey(priv);		
 		ct2.relineariseCubic(rk);
-		double r3 = ct2.measureCTNoise(priv);
-		System.out.println("Noise after relin: " + r3);
-		
+
 		assertEquals(2, ct2.size());
 		FVPlainText pt4 = ct2.decrypt(priv);
 		long dataresrelin[] = pt4.decode(encoder);
@@ -323,13 +284,9 @@ class FVCipherTextTest {
 
 	@Test
 	public void testRotate() throws Exception {
-		FVParameters ps = FVParameters.FVParamsN1024S128;
-		FVPrivateKey privKey = new FVPrivateKey(ps);		
-		FVPublicKey pubKey = new FVPublicKey(privKey);
-		FVEncoder encoder = new FVEncoder(ps);
-		FVRotationKey rotKey = new FVRotationKey(privKey, encoder);
+		FVRotationKey rotKey = new FVRotationKey(priv, encoder);
 		
-		long data1[] = new long[(int)ps.polynomialModulusExponent];
+		long data1[] = new long[(int)params.polynomialModulusExponent];
 		for(int i = 0; i < data1.length; i++)
 		{
 			data1[i] = i;
@@ -338,14 +295,14 @@ class FVCipherTextTest {
 		FVPlainText pt1 = new FVPlainText();
 		pt1.encode(encoder, data1);
 		
-		FVCipherText ct1 = pt1.encrypt(pubKey);
+		FVCipherText ct1 = pt1.encrypt(pub);
 
 		FVCipherText ct2 = new FVCipherText(ct1);
 		ct2.rotate(encoder, encoder.interchangeIndex());
 		ct2.rotationRekey(rotKey, encoder, encoder.interchangeIndex());
 		
-		long[] decoded1 = ct1.decrypt(privKey).decode(encoder);
-		long[] decoded2 = ct2.decrypt(privKey).decode(encoder);
+		long[] decoded1 = ct1.decrypt(priv).decode(encoder);
+		long[] decoded2 = ct2.decrypt(priv).decode(encoder);
 		
 		for(int i = 0; i < data1.length/2; i++)
 		{
