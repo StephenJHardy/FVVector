@@ -23,8 +23,8 @@ public class FVRotationKey {
 	FVParameters params;
 	FVEncoder encoder;
 
-	ArrayList< ArrayList< UnivariatePolynomialZp64 > > keys0;
-	ArrayList< ArrayList< UnivariatePolynomialZp64 > > keys1;
+	private ArrayList< ArrayList< UnivariatePolynomialZp64 > > keys0;
+	private ArrayList< ArrayList< UnivariatePolynomialZp64 > > keys1;
 
 	/**
 	 * 
@@ -41,13 +41,13 @@ public class FVRotationKey {
 		this.params = privKey.params;
 		this.encoder = encoder;
 
-		keys0 = new ArrayList< ArrayList< UnivariatePolynomialZp64 > >((int)params.polynomialModulusExponent);
-		keys1 = new ArrayList< ArrayList< UnivariatePolynomialZp64 > >((int)params.polynomialModulusExponent);		
+		keys0 = new ArrayList< ArrayList< UnivariatePolynomialZp64 > >(numberOfKeys());
+		keys1 = new ArrayList< ArrayList< UnivariatePolynomialZp64 > >(numberOfKeys());
 				
 		for(int k = 0; k <= params.polynomialModulusExponent/2; k++)
 		{
-			keys0.add(new ArrayList< UnivariatePolynomialZp64 > ((int)params.l + 1));
-			keys1.add(new ArrayList< UnivariatePolynomialZp64 > ((int)params.l + 1));
+			keys0.add(new ArrayList< UnivariatePolynomialZp64 > (elementsPerKey()));
+			keys1.add(new ArrayList< UnivariatePolynomialZp64 > (elementsPerKey()));
 			
 			for(long i=0; i <= params.l; i++)
 			{
@@ -76,5 +76,43 @@ public class FVRotationKey {
 			}
 		}	
 	}
-		
+
+	public int numberOfKeys()
+	{
+		return (int)params.polynomialModulusExponent/2 + 1;
+	}
+
+	public int elementsPerKey()
+	{
+		return (int)params.l + 1;
+	}
+
+
+	/**
+	 *
+	 * Return the set of polynomials used to rekey the first element of a ciphertext that has been transformed by
+	 * the given index.
+	 *
+	 * @param index the index of the transformation used (as implemented in the encoder class
+	 * @return an array list of polynomials with the correction factors
+	 *
+	 */
+	public ArrayList< UnivariatePolynomialZp64 > getFirstRekeyingPolynomials(int index)
+	{
+		return keys0.get(index);
+	}
+
+	/**
+	 *
+	 * Return the set of polynomials used to rekey the second element of a ciphertext that has been transformed by
+	 * the given index.
+	 *
+	 * @param index the index of the transformation used (as implemented in the encoder class
+	 * @return an array list of polynomials with the correction factors
+	 *
+	 */	public ArrayList< UnivariatePolynomialZp64 > getSecondRekeyingPolynomials(int index)
+	{
+		return keys1.get(index);
+	}
+
 }
