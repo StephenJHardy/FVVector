@@ -5,17 +5,26 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.security.SecureRandom;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
+
 
 class FVVectorTest {
 
+	static FVParameters ps;
+	static FVPrivateKey privKey;
+	static FVContext context;
+
+	@BeforeAll
+	public static void oneTimeSetUp() {
+		ps = FVParameters.generateParameterSet(FVParameters.SecurityParam.BITS_128, 2048, 14, 56-14);
+		privKey = new FVPrivateKey(ps);
+		context = FVContext.BuildDefaultContext(privKey);
+	}
+
+
 	@Test
 	void testEncryptDecrypt() {
-		
-		FVParameters ps = FVParameters.FVParamsN1024S128;
-		FVPrivateKey privKey = new FVPrivateKey(ps);
-		FVContext context = FVContext.BuildDefaultContext(privKey);
-		
-		
+
 		long data[] = new long[(int)ps.polynomialModulusExponent];
 		data[0] = 100L;
 		data[200] = 200L;
@@ -43,14 +52,9 @@ class FVVectorTest {
 
 	@Test
 	void testEncryptedAddition() {
-		
-		FVParameters ps = FVParameters.FVParamsN1024S128;
-		FVPrivateKey privKey = new FVPrivateKey(ps);		
-		FVContext context = FVContext.BuildDefaultContext(privKey);
-		
+
 		SecureRandom rand = new SecureRandom();
-//		rand.setSeed(1L);
-		
+
 		long data1[] = new long[(int)ps.polynomialModulusExponent];
 		long data2[] = new long[(int)ps.polynomialModulusExponent];
 		for(int i = 0; i < data1.length; i++)
@@ -68,21 +72,15 @@ class FVVectorTest {
 
 		for(int i = 0; i < data1.length; i++)
 		{
-//			System.err.println(String.format("%d %d %d %d %d\n",data1[i],data2[i],datares[i],ps.ptRing.modulus(data1[i] + data2[i]),ps.ptRing.modulus(datares[i])));
 			assertEquals(ps.ptRing.modulus(data1[i] + data2[i]), ps.ptRing.modulus(datares[i]));
 		}
 	}
 
 	@Test
 	void testEncryptedSubtraction() {
-		
-		FVParameters ps = FVParameters.FVParamsN1024S128;
-		FVPrivateKey privKey = new FVPrivateKey(ps);		
-		FVContext context = FVContext.BuildDefaultContext(privKey);
-		
+
 		SecureRandom rand = new SecureRandom();
-//		rand.setSeed(1L);
-		
+
 		long data1[] = new long[(int)ps.polynomialModulusExponent];
 		long data2[] = new long[(int)ps.polynomialModulusExponent];
 		for(int i = 0; i < data1.length; i++)
@@ -100,7 +98,6 @@ class FVVectorTest {
 
 		for(int i = 0; i < data1.length; i++)
 		{
-//			System.err.println(String.format("%d %d %d %d %d\n",data1[i],data2[i],datares[i],ps.ptRing.modulus(data1[i] + data2[i]),ps.ptRing.modulus(datares[i])));
 			assertEquals(ps.ptRing.modulus(data1[i] - data2[i]), ps.ptRing.modulus(datares[i]));
 		}
 	}
@@ -108,10 +105,6 @@ class FVVectorTest {
 	
 	@Test
 	void testEncryptedMultiplication() {
-		
-		FVParameters ps = FVParameters.generateParameterSet(FVParameters.SecurityParam.BITS_128, 2048, 14, 56-14);
-		FVPrivateKey privKey = new FVPrivateKey(ps);		
-		FVContext context = FVContext.BuildDefaultContext(privKey);
 
 		SecureRandom rand = new SecureRandom();
 		
@@ -139,10 +132,6 @@ class FVVectorTest {
 	@Test
 	void testRelinearisedEncryptedMultiplication() {
 		
-		FVParameters ps = FVParameters.generateParameterSet(FVParameters.SecurityParam.BITS_128, 2048, 14, 56-14);
-		FVPrivateKey privKey = new FVPrivateKey(ps);		
-		FVContext context = FVContext.BuildDefaultContext(privKey); 
-
 		SecureRandom rand = new SecureRandom();
 		
 		long data1[] = new long[(int)ps.polynomialModulusExponent];
@@ -168,10 +157,7 @@ class FVVectorTest {
 
 	@Test
 	void testRotationOfCiphertexts() {
-		FVParameters ps = FVParameters.FVParamsN1024S128;
-		FVPrivateKey privKey = new FVPrivateKey(ps);		
-		FVContext context = FVContext.BuildDefaultContext(privKey); 
-		
+
 		long data1[] = new long[(int)ps.polynomialModulusExponent];
 		for(int i = 0; i < data1.length; i++)
 		{

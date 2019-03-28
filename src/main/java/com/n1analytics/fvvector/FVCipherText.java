@@ -290,9 +290,9 @@ public class FVCipherText {
 		ArrayList< UnivariatePolynomialZp64 > decomp = PolynomialUtils.decomposePolynomial(polys.get(1), params.decompositionBase);
 		
 		UnivariatePolynomialZp64 newc0 =
-				PolynomialUtils.accumulateDotProduct(params.ctPolyField, polys.get(0), rk.keys0.get(rotation), decomp);
+				PolynomialUtils.accumulateDotProduct(params.ctPolyField, polys.get(0), rk.getFirstRekeyingPolynomials(rotation), decomp);
 		UnivariatePolynomialZp64 newc1 = 			
-				PolynomialUtils.accumulateDotProduct(params.ctPolyField, polys.get(1), rk.keys1.get(rotation), decomp);
+				PolynomialUtils.accumulateDotProduct(params.ctPolyField, polys.get(1), rk.getSecondRekeyingPolynomials(rotation), decomp);
 		
 		polys.clear();
 		polys.add(newc0);
