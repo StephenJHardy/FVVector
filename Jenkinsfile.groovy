@@ -1,7 +1,7 @@
 @Library("N1Pipeline@0.0.23")
-import com.n1analytics.git.GitUtils
-import com.n1analytics.git.GitCommit
-import com.n1analytics.maven.MavenUtils
+import com.humanata.git.GitUtils
+import com.humanata.git.GitCommit
+import com.humanata.maven.MavenUtils
 
 // default git context we are using with N1 projects.
 GIT_CONTEXT = "jenkins"
