@@ -177,5 +177,22 @@ class FVVectorTest {
 		}
 
 	}
+
+	@Test
+	void testSumIntoFirstSlot() {
+		long data[] = new long[(int)ps.polynomialModulusExponent];
+		long expectedSum = 0;
+		for(int i = 0; i < data.length; i++)
+		{
+			data[i] = ps.ptRing.modulus(i);
+			expectedSum = ps.ptRing.modulus(expectedSum + data[i]);
+		}
+		
+		FVCipherText ct = context.encodeAndEncrypt(data);
+		FVCipherText ctSummed = context.sumIntoFirstSlot(ct);
+		
+		long[] decoded = context.decryptAndDecode(ctSummed, privKey);
+		assertEquals(expectedSum, decoded[0], "Slot 0 should contain the sum of all slots");
+	}
 	
 }

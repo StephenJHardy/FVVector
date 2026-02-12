@@ -299,9 +299,44 @@ public class FVCipherText {
 		polys.add(newc1);
 	}
 
+	/**
+	 * Sum all slot values into the first slot, in place.
+	 * Uses rotate-and-add: iteratively rotate by powers of 2, add to double the
+	 * number of slots summed, until all slots are summed into slot 0.
+	 *
+	 * @param rk the rotation key for rekeying after each rotation
+	 */
 	void sumIntoFirstSlot(FVRotationKey rk)
 	{
+		if(!rk.params.equals(this.params))
+			throw new RuntimeException("Rotation key parameters do not match ciphertext");
+		if(polys.size() != 2)
+			throw new RuntimeException("sumIntoFirstSlot requires a ciphertext with 2 elements");
 
+		FVEncoder encoder = rk.encoder;
+		int n2 = (int)params.polynomialModulusExponent / 2;
+
+		// Step 1: Interchange rows (N/2 x 2) and add - sums pairs from the two rows
+		FVCipherText rotated = new FVCipherText(this);
+		rotated.rotate(encoder, encoder.interchangeIndex());
+		rotated.rotationRekey(rk, encoder.interchangeIndex());
+		addTo(rotated);
+
+		// Step 2: Rotate by 1, 2, 4, ... and add - each step doubles the number of slots summed
+		for(int stride = 1; stride < n2; stride *= 2)
+		{
+			int idx = encoder.leftRotateIndex(stride);
+			rotated = new FVCipherText(this);
+			rotated.rotate(encoder, idx);
+			rotated.rotationRekey(rk, idx);
+			addTo(rotated);
+		}
+
+		// Step 3: Final interchange to collapse the last 2 slots into 1
+		rotated = new FVCipherText(this);
+		rotated.rotate(encoder, encoder.interchangeIndex());
+		rotated.rotationRekey(rk, encoder.interchangeIndex());
+		addTo(rotated);
 	}
 
 }

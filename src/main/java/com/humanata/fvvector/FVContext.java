@@ -266,4 +266,19 @@ public class FVContext {
 		return ret;
 	}
 
+	/**
+	 * Sum all slot values into the first slot.
+	 * The result ciphertext has the sum of all input slots in slot 0;
+	 * other slots may contain arbitrary values.
+	 *
+	 * @param input ciphertext whose slots to sum
+	 * @return new ciphertext with the sum in slot 0
+	 */
+	FVCipherText sumIntoFirstSlot(FVCipherText input)
+	{
+		FVCipherText ret = new FVCipherText(input);
+		ret.sumIntoFirstSlot(rotKey);
+		return ret;
+	}
+
 }
