@@ -5,10 +5,10 @@
 FVVector is a Java library that implements the Fan-Vercauteren homomorphic encryption scheme for slot-packed vector operations. It has a simple API and is designed as a demonstration library that illustrates the concepts behind the scheme. **Use only for experimentation, prototyping, and education** — not for production or important systems.
 
 ## Hello World
-Let's do a homomorphic multiplication of a vector of 1024 integers packed into a single ciphertext.
+Let's do a homomorphic multiplication of a vector of 2048 integers packed into a single ciphertext.
 
 #### Setup
-		FVParameters ps = FVParameters.FVParamsN1024S128;
+		FVParameters ps = FVParameters.FVParamsN2048S128;
 		FVPrivateKey privKey = new FVPrivateKey(ps);
 		FVContext context = FVContext.BuildDefaultContext(privKey);
 		
@@ -25,8 +25,8 @@ Let's do a homomorphic multiplication of a vector of 1024 integers packed into a
 		}
 
 #### Homomorphic arithmetic		
-		FVCipherText ct1 = context.encrypt(data1);
-		FVCipherText ct2 = context.encrypt(data2);
+		FVCipherText ct1 = context.encodeAndEncrypt(data1);
+		FVCipherText ct2 = context.encodeAndEncrypt(data2);
 		FVCipherText ct3 = context.multiply(ct1, ct2);
 		long datares[] = context.decryptAndDecode(ct3, privKey);
 
