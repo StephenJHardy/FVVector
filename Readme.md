@@ -43,6 +43,7 @@ The library as implemented allows the encryption of power of two vector lengths 
 * multiplication of encrypted vectors
 * certain rotations and permutations of the elements
 * sum of all slots into the first slot (`sumIntoFirstSlot`)
+* dot product of two encrypted vectors (`dotProduct`)
 * decryption of the vectors
 
 As implemented, the library allows the use of moduli up to 63 bits in size. This limits the number of arithmetic and rotation operations that can be done while still allowing correct decryption of the results.
@@ -113,6 +114,7 @@ For convenience, an **FVContext** can be created from the private key, which use
 | slot permutation | rotateSlotsLeft | treat encrypted vector as two rows and rotate rows left |
 | slot permutation | rotateSlotsRight | treat encrypted vector as two rows and rotate rows right |
 | slot permutation | sumIntoFirstSlot | sum all slots into slot 0 |
+| aggregation | dotProduct | dot product of two ciphertexts into slot 0 |
 
 
 ### Detailed approach
@@ -125,6 +127,5 @@ The format is a simple binary encoding and is not guaranteed to be stable across
 
 ## Performance
 The library is written wholly in java and all polynomial manipulations in finite fields are done using the Redberry Rings java library. Due to this, several algorithmic optimisations that are used in other libraries have not been implemented (yet). These include representing the ciphertext polynomial coefficients in a residue number system (RNS), and also the use of the Number Theoretic Transform in performing polynomial multiplications. This means that this library is algorithmically slower than other implementations out there. However, because of this, it is significantly easier to understand 
-
 
 

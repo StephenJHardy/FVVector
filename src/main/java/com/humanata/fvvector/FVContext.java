@@ -311,4 +311,26 @@ public class FVContext {
 		return ret;
 	}
 
+	/**
+	 * Compute the dot product of two encrypted vectors.
+	 * The result ciphertext has the sum of elementwise products in slot 0;
+	 * other slots may contain arbitrary values.
+	 *
+	 * @param ct1 first operand
+	 * @param ct2 second operand
+	 * @return new ciphertext with the dot product in slot 0
+	 * @throws RuntimeException if rotation key is not available
+	 */
+	public FVCipherText dotProduct(FVCipherText ct1, FVCipherText ct2)
+	{
+		if(relinKey == null)
+			throw new RuntimeException("Relinearisation key not available for dotProduct");
+		if(rotKey == null)
+			throw new RuntimeException("Rotation key not available for dotProduct");
+
+		FVCipherText ret = multiply(ct1, ct2);
+		ret.sumIntoFirstSlot(rotKey);
+		return ret;
+	}
+
 }

@@ -148,4 +148,29 @@ class FVContextTest {
 		long[] decoded = rotationContext.decryptAndDecode(ctSummed, privKey);
 		assertEquals(expectedSum, decoded[0], "Slot 0 should contain the sum of all slots");
 	}
+
+	@Test
+	@Tag("slow")
+	void testDotProduct() {
+		FVParameters dotParams = FVParameters.FVParamsN2048S128insecure;
+		FVPrivateKey dotPrivKey = new FVPrivateKey(dotParams);
+		FVContext dotContext = FVContext.BuildDefaultContext(dotPrivKey);
+		int dotN = (int) dotParams.polynomialModulusExponent;
+
+		long[] data1 = new long[dotN];
+		long[] data2 = new long[dotN];
+		long expected = 0L;
+		for (int i = 0; i < dotN; i++) {
+			data1[i] = i % 17;
+			data2[i] = i % 13;
+			expected = dotParams.ptRing.modulus(expected + (data1[i] * data2[i]));
+		}
+
+		FVCipherText ct1 = dotContext.encodeAndEncrypt(data1);
+		FVCipherText ct2 = dotContext.encodeAndEncrypt(data2);
+		FVCipherText ctDot = dotContext.dotProduct(ct1, ct2);
+
+		long[] decoded = dotContext.decryptAndDecode(ctDot, dotPrivKey);
+		assertEquals(expected, decoded[0], "Slot 0 should contain the dot product");
+	}
 }
