@@ -116,8 +116,8 @@ public class FVParameters {
 	IntegersZp64 ctRing;   // ciphertext ring - integers modulus coefficientModulus
 	UnivariatePolynomialZp64 ptQuotientPoly;  // the quotient poly = x^polynomialModulusExponent + 1 with coefficients from plaintext ring
 	UnivariatePolynomialZp64 ctQuotientPoly;  // the quotient poly = x^polynomialModulusExponent + 1 with coefficients from ciphertext ring
-	FiniteField<UnivariatePolynomialZp64> ptPolyField; // the Galois Field represented by polynomials with coefficients in the plaintext ring modolo the quotient poly
-	FiniteField<UnivariatePolynomialZp64> ctPolyField; // the Galois Field represented by polynomials with coefficients in the ciphertext ring modolo the quotient poly
+	FiniteField<UnivariatePolynomialZp64> ptPolyField; // the Galois Field represented by polynomials with coefficients in the plaintext ring modulo the quotient poly
+	FiniteField<UnivariatePolynomialZp64> ctPolyField; // the Galois Field represented by polynomials with coefficients in the ciphertext ring modulo the quotient poly
  	
 	/**
 	 * 

@@ -239,7 +239,7 @@ class PolynomialUtilsTest {
 	}
 	
 	@Test
-	public void testDotProducWithPowers() throws Exception {
+	public void testDotProductWithPowers() throws Exception {
 		int polyorder = 16;
 		long modulus = 1627389952L;
 		FiniteField<UnivariatePolynomialZp64> field = getGaloisField(modulus, polyorder);
@@ -266,7 +266,7 @@ class PolynomialUtilsTest {
 		UnivariatePolynomialZp64 atom = UnivariatePolynomialZp64.create(modulus,data3);
 		
 		UnivariatePolynomialZp64 result = 
-				PolynomialUtils.dotProducWithPowers(field,polys,atom); 
+				PolynomialUtils.dotProductWithPowers(field,polys,atom); 
 
 		long groundTruth[] = {838860802, 1023410178, 117440505, 301989895, 1459617784, 788529158, 
 				838860801, 335544317, 603979783, 1224736757, 318767113, 536870909, 

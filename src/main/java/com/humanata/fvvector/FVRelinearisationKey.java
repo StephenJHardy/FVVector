@@ -8,8 +8,8 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
  *
  * This class represents a set of keys for the FV cryptosystem that allows a ciphertext
  * with three elements to be reduced to a ciphertext with only two elements, at the expense
- * of some additional noise in the cyphertext
- * 
+ * of some additional noise in the ciphertext.
+ *
  * @author har991
  *
  */

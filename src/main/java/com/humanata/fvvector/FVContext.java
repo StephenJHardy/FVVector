@@ -10,11 +10,12 @@ import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 
-/** This class carries around the information required to manipulate 
- * ciphertexts using homomorphic arithmetic and offers convenient
- * 
- * @author har991
+/**
+ * Carries the information required to manipulate ciphertexts using homomorphic
+ * arithmetic and offers a convenient API for encoding, encryption, decryption,
+ * and operations such as addition, multiplication, and slot rotations.
  *
+ * @author har991
  */
 public class FVContext {
 

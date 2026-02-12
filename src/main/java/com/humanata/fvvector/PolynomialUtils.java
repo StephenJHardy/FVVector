@@ -354,7 +354,7 @@ public class PolynomialUtils {
 	 * @param atom polynomial which will have powers calculated
 	 * @return polynomial with sum
 	 */
-	public static UnivariatePolynomialZp64 dotProducWithPowers(
+	public static UnivariatePolynomialZp64 dotProductWithPowers(
 			FiniteField<UnivariatePolynomialZp64> field,
 			ArrayList<UnivariatePolynomialZp64> parray, 
 			UnivariatePolynomialZp64 atom)

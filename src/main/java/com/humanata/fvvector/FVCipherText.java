@@ -77,7 +77,7 @@ public class FVCipherText {
 			throw new RuntimeException("Decryption key parameters do not match ciphertext parameters");
 		
 		UnivariatePolynomialZp64 sum = 
-				PolynomialUtils.dotProducWithPowers(privKey.params.ctPolyField, polys, privKey.key());
+				PolynomialUtils.dotProductWithPowers(privKey.params.ctPolyField, polys, privKey.key());
 
 		long delta = privKey.params.coefficientModulus / privKey.params.plainTextModulus;
 
@@ -236,7 +236,7 @@ public class FVCipherText {
 			throw new RuntimeException("Decryption key parameters do not match ciphertext parameters");
 		
 		UnivariatePolynomialZp64 sum = 
-				PolynomialUtils.dotProducWithPowers(privKey.params.ctPolyField, polys, privKey.key());
+				PolynomialUtils.dotProductWithPowers(privKey.params.ctPolyField, polys, privKey.key());
 
 		double delta = (double)privKey.params.coefficientModulus / (double)privKey.params.plainTextModulus;
 		long[] res = new long[(int)privKey.params.polynomialModulusExponent];
@@ -314,7 +314,7 @@ public class FVCipherText {
 		if(polys.size() != 2)
 			throw new RuntimeException("sumIntoFirstSlot requires a ciphertext with 2 elements");
 
-		FVEncoder encoder = rk.encoder;
+		FVEncoder encoder = rk.getEncoder();
 		int n2 = (int)params.polynomialModulusExponent / 2;
 
 		// Step 1: Interchange rows (N/2 x 2) and add - sums pairs from the two rows

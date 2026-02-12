@@ -8,20 +8,18 @@ import java.util.ArrayList;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 
 /**
+ * Represents a set of keys for the FV cryptosystem that allows a ciphertext
+ * with three elements to be reduced to a ciphertext with only two elements,
+ * at the expense of some additional noise in the ciphertext.
  *
- * This class represents a set of keys for the FV cryptosystem that allows a ciphertext
- * with three elements to be reduced to a ciphertext with only two elements, at the expense
- * of some additional noise in the cyphertext
- * 
  * @author har991
- *
  */
 
 public class FVRotationKey {
 	
 
 	FVParameters params;
-	FVEncoder encoder;
+	private final FVEncoder encoder;
 
 	private ArrayList< ArrayList< UnivariatePolynomialZp64 > > keys0;
 	private ArrayList< ArrayList< UnivariatePolynomialZp64 > > keys1;
@@ -87,6 +85,15 @@ public class FVRotationKey {
 		return (int)params.l + 1;
 	}
 
+	/**
+	 * Returns the encoder used by this rotation key for slot transformations.
+	 *
+	 * @return the FVEncoder associated with this rotation key
+	 */
+	public FVEncoder getEncoder()
+	{
+		return encoder;
+	}
 
 	/**
 	 *
