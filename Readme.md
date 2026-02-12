@@ -1,7 +1,8 @@
-
+> **⚠️ DISCLAIMER:** This library is for **experimentation and learning purposes only**. It must **not** be used in production systems, for sensitive data, or in any security-critical context. It has not undergone a security review, may have side-channel vulnerabilities, and is intended solely to illustrate homomorphic encryption concepts.
 
 ## Introduction
-FVVector is a java native library that implements the Fan-Vercauteren encryption system for homomorphic operations on vectors of integers. It has a simple API and is designed as a demonstration library that illustrates the concepts behind the scheme. 
+
+FVVector is a Java library that implements the Fan-Vercauteren homomorphic encryption scheme for slot-packed vector operations. It has a simple API and is designed as a demonstration library that illustrates the concepts behind the scheme. **Use only for experimentation, prototyping, and education** — not for production or important systems.
 
 ## Hello World
 Let's do a homomorphic multiplication of a vector of 1024 integers packed into a single ciphertext.
@@ -44,6 +45,14 @@ The library as implemented allows the encryption of power of two vector lengths 
 * decryption of the vectors
 
 As implemented, the library allows the use of moduli up to 63 bits in size. This limits the number of arithmetic and rotation operations that can be done while still allowing correct decryption of the results.
+
+## Security Considerations
+
+**This library is not suitable for production use.** See the disclaimer above.
+
+* **Parameter selection:** Use only the standard parameter presets. Do **not** use the `*insecure` variants outside of unit tests — they use near-zero noise and offer no real security.
+* **Constant-time operations:** The library does not provide constant-time guarantees. Side-channel attacks may be possible.
+* **Serialization:** Keys and ciphertexts cannot be serialized. Keep them in memory only.
 
 ## Structure
 
@@ -94,7 +103,7 @@ For convenience, an **FVContext** can be created from the private key, which use
 | encode and encrypt | encodeAndEncrypt | encode a vector of longs and encrypt to ciphertext |
 | decrypt and decode | decryptAndDecode | decrypt a ciphertext and decode to a vector of longs |
 | addition | add | add two ciphertexts |
-| subtraction | subtract | subtract one cyphertext from another |
+| subtraction | subtract | subtract one ciphertext from another |
 | multiplication | multiply | multiply two ciphertexts (and relinearise) |
 | multiplication | multiply | multiply a ciphertext by a plaintext |
 | slot permutation | interchangeSlotVectors | treat encrypted vector as two rows and swap rows |

@@ -9,14 +9,13 @@ import java.util.ArrayList;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 
 /**
+ * Represents a public key for the FV cryptosystem as a pair of polynomials
+ * ([−(as + e)]q , a) where s is the secret key, a is random, and e is noise.
+ * <p>
+ * <b>For experimentation and learning only.</b> Not for production use.
+ * This class does not support serialization.
  *
- * This class represents a public key for the FV cryptosystem. It is represented by a 
- * pair of polynomials (implemented as an ArrayList) that contains ([−(as + e)]q , a)
- * where s is the secret key polynomial, a is a polynomial with random coefficients
- * and e is a noise polynomial, all polynomials modulo the coefficientModulus.
- * 
  * @author har991
- *
  */
 public class FVPublicKey {
 	ArrayList< UnivariatePolynomialZp64 > polys = new ArrayList< UnivariatePolynomialZp64 >();

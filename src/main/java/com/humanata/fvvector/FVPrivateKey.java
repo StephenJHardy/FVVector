@@ -8,8 +8,12 @@ import cc.redberry.rings.poly.univar.*;
 
 
 /**
- * @author har991
+ * Represents the private key for the FV cryptosystem.
+ * <p>
+ * <b>For experimentation and learning only.</b> Not for production use.
+ * This class does not support serialization.
  *
+ * @author har991
  */
 public class FVPrivateKey {
 	

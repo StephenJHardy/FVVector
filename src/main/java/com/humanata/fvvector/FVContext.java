@@ -14,6 +14,9 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
  * Carries the information required to manipulate ciphertexts using homomorphic
  * arithmetic and offers a convenient API for encoding, encryption, decryption,
  * and operations such as addition, multiplication, and slot rotations.
+ * <p>
+ * <b>For experimentation and learning only.</b> Do not use in production or
+ * security-critical systems. See {@link FVParameters} for security warnings.
  *
  * @author har991
  */

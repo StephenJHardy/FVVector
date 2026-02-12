@@ -18,9 +18,11 @@ import static cc.redberry.rings.poly.PolynomialMethods.*;
 import static cc.redberry.rings.Rings.*;
 
 /**
- * This class represents a cipher text represented as an array of polynomials. This object has simple homomorphic 
- * arithmetic operations defined for it. Given a compatible private key, it can decrypt to a plaintext.
- * 
+ * Represents a ciphertext as an array of polynomials, with homomorphic arithmetic operations.
+ * Given a compatible private key, it can decrypt to a plaintext.
+ * <p>
+ * <b>For experimentation and learning only.</b> Not for production use.
+ * This class does not support serialization.
  */
 public class FVCipherText {
 

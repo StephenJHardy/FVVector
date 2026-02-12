@@ -19,11 +19,16 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 
 /**
- * 
- * This class is used to construct a description of the parameters of the FV crypto system
- * that is being used.
- * 
- * There are some stringent limitations on the parameters at this time:
+ * Constructs a description of the parameters of the FV cryptosystem.
+ * <p>
+ * <b>WARNING — NOT FOR PRODUCTION:</b> This library is for experimentation and learning only.
+ * Do not use in production systems, for sensitive data, or in any security-critical context.
+ * It has not undergone a security review and may have side-channel vulnerabilities.
+ * <p>
+ * Use only standard presets ({@link #FVParamsN1024S128}, {@link #FVParamsN2048S128}).
+ * The {@code *insecure} variants use near-zero noise and offer no real security.
+ *
+ * <p>There are some stringent limitations on the parameters at this time:
  * * only polynomials of the form X^(2^d)+1 are supported for some d
  * * 2^d is smaller or less that 32768
  * * the plainTextModulus must be smaller than 2^61 at this time
@@ -91,10 +96,16 @@ public class FVParameters {
      */
     public static final FVParameters FVParamsN2048S128small  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057594037920137L, 40961L, defaultNoiseSD, 8); //16 bits in t, 40 bits in q
 
-     /** 
-      * Some insecure parameters - with no noise added to the ciphertexts. Purely here for testing and @todo should be removed.
-      */
+    /**
+     * <b>Testing only — do not use in real setting.</b> Insecure parameters with near-zero noise.
+     * Use {@link #FVParamsN1024S128} or {@link #FVParamsN2048S128} for real encryption.
+     */
     public static final FVParameters FVParamsN1024S128insecure  = new FVParameters(SecurityParam.BITS_128, 1024L, 536834866L, 40961L, 0.0000000001, 8); //16 bits in t, 29 bits in q
+
+    /**
+     * <b>Testing only — do not use in a real setting.</b> Insecure parameters with near-zero noise.
+     * Use {@link #FVParamsN2048S128} for real encryption.
+     */
     public static final FVParameters FVParamsN2048S128insecure  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, 0.0000000001, 8); //19 bits in t, 29 bits in q
     
    
