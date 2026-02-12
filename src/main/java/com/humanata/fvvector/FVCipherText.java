@@ -335,11 +335,7 @@ public class FVCipherText {
 			addTo(rotated);
 		}
 
-		// Step 3: Final interchange to collapse the last 2 slots into 1
-		rotated = new FVCipherText(this);
-		rotated.rotate(encoder, encoder.interchangeIndex());
-		rotated.rotationRekey(rk, encoder.interchangeIndex());
-		addTo(rotated);
+		// After Step 2, every slot contains the sum; slot 0 is the result.
 	}
 
 }
