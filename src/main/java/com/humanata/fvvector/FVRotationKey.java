@@ -8,9 +8,8 @@ import java.util.ArrayList;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 
 /**
- * Represents a set of keys for the FV cryptosystem that allows a ciphertext
- * with three elements to be reduced to a ciphertext with only two elements,
- * at the expense of some additional noise in the ciphertext.
+ * Represents a set of rotation keys for the FV cryptosystem that allow
+ * slot rotations and permutations to be rekeyed back to the original secret key.
  *
  * @author har991
  */
@@ -29,6 +28,8 @@ public class FVRotationKey {
 	 * Construct a set of rotation keys from a private key and an encoder.
 	 * 
 	 * @param privKey the private key to generate the public key from
+	 * @param encoder the encoder used to compute rotation indices
+	 * @throws RuntimeException if private key and encoder parameters do not match
 	 * 
 	 */
 	public FVRotationKey(FVPrivateKey privKey, FVEncoder encoder)
@@ -100,7 +101,7 @@ public class FVRotationKey {
 	 * Return the set of polynomials used to rekey the first element of a ciphertext that has been transformed by
 	 * the given index.
 	 *
-	 * @param index the index of the transformation used (as implemented in the encoder class
+	 * @param index the index of the transformation used (as implemented in the encoder class)
 	 * @return an array list of polynomials with the correction factors
 	 *
 	 */
@@ -114,10 +115,11 @@ public class FVRotationKey {
 	 * Return the set of polynomials used to rekey the second element of a ciphertext that has been transformed by
 	 * the given index.
 	 *
-	 * @param index the index of the transformation used (as implemented in the encoder class
+	 * @param index the index of the transformation used (as implemented in the encoder class)
 	 * @return an array list of polynomials with the correction factors
 	 *
-	 */	public ArrayList< UnivariatePolynomialZp64 > getSecondRekeyingPolynomials(int index)
+	 */
+	public ArrayList< UnivariatePolynomialZp64 > getSecondRekeyingPolynomials(int index)
 	{
 		return keys1.get(index);
 	}

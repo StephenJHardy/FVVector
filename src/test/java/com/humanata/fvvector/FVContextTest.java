@@ -3,12 +3,16 @@ package com.humanata.fvvector;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 class FVContextTest {
 
 	private static FVParameters ps;
 	private static FVPrivateKey privKey;
+	private static FVPublicKey pubKey;
+	private static FVEncoder encoder;
+	private static FVRelinearisationKey relinKey;
 	private static FVContext context;
 	private static int n;
 
@@ -17,8 +21,15 @@ class FVContextTest {
 		// Insecure parameters for faster tests; do not use in production.
 		ps = FVParameters.FVParamsN1024S128insecure;
 		privKey = new FVPrivateKey(ps);
-		context = FVContext.BuildDefaultContext(privKey);
+		pubKey = new FVPublicKey(privKey);
+		encoder = new FVEncoder(ps);
+		relinKey = new FVRelinearisationKey(privKey);
+		context = new FVContext(pubKey, encoder, relinKey, null);
 		n = (int) ps.polynomialModulusExponent;
+	}
+	
+	private static FVContext buildRotationContext() {
+		return FVContext.BuildDefaultContext(privKey);
 	}
 
 	@Test
@@ -84,6 +95,7 @@ class FVContextTest {
 	}
 
 	@Test
+	@Tag("slow")
 	void testRotateSlotsLeftRightAndInterchange() {
 		int half = n / 2;
 		long[] data = new long[n];
@@ -92,23 +104,24 @@ class FVContextTest {
 			data[i + half] = 1000 + i;
 		}
 
-		FVCipherText ct = context.encodeAndEncrypt(data);
+		FVContext rotationContext = buildRotationContext();
+		FVCipherText ct = rotationContext.encodeAndEncrypt(data);
 
-		long[] swapped = context.decryptAndDecode(context.interchangeSlotVectors(ct), privKey);
+		long[] swapped = rotationContext.decryptAndDecode(rotationContext.interchangeSlotVectors(ct), privKey);
 		for (int i = 0; i < half; i++) {
 			assertEquals(data[i + half], swapped[i]);
 			assertEquals(data[i], swapped[i + half]);
 		}
 
 		int left = 3;
-		long[] leftRotated = context.decryptAndDecode(context.rotateSlotsLeft(ct, left), privKey);
+		long[] leftRotated = rotationContext.decryptAndDecode(rotationContext.rotateSlotsLeft(ct, left), privKey);
 		for (int i = 0; i < half; i++) {
 			assertEquals(data[(i + left) % half], leftRotated[i]);
 			assertEquals(data[half + (i + left) % half], leftRotated[i + half]);
 		}
 
 		int right = 4;
-		long[] rightRotated = context.decryptAndDecode(context.rotateSlotsRight(ct, right), privKey);
+		long[] rightRotated = rotationContext.decryptAndDecode(rotationContext.rotateSlotsRight(ct, right), privKey);
 		for (int i = 0; i < half; i++) {
 			int idx = (i - right) % half;
 			if (idx < 0) {
@@ -120,6 +133,7 @@ class FVContextTest {
 	}
 
 	@Test
+	@Tag("slow")
 	void testSumIntoFirstSlot() {
 		long[] data = new long[n];
 		long expectedSum = 0L;
@@ -128,9 +142,10 @@ class FVContextTest {
 			expectedSum = ps.ptRing.modulus(expectedSum + data[i]);
 		}
 
-		FVCipherText ct = context.encodeAndEncrypt(data);
-		FVCipherText ctSummed = context.sumIntoFirstSlot(ct);
-		long[] decoded = context.decryptAndDecode(ctSummed, privKey);
+		FVContext rotationContext = buildRotationContext();
+		FVCipherText ct = rotationContext.encodeAndEncrypt(data);
+		FVCipherText ctSummed = rotationContext.sumIntoFirstSlot(ct);
+		long[] decoded = rotationContext.decryptAndDecode(ctSummed, privKey);
 		assertEquals(expectedSum, decoded[0], "Slot 0 should contain the sum of all slots");
 	}
 }

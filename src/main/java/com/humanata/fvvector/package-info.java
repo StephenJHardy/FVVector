@@ -1,9 +1,6 @@
 /**
- * Fan-Vercauteren homomorphic encryption for slot-packed vectors.
+ * Fan-Vercauteren (FV) homomorphic encryption demo library with slot-packed vectors.
  * <p>
- * <b>WARNING — EXPERIMENTATION AND LEARNING ONLY:</b> This library must not be used
- * in production systems, for sensitive data, or in security-critical contexts.
- * It has not undergone a security review and may have vulnerabilities.
+ * For experimentation and learning only. Not for production use.
  */
-
 package com.humanata.fvvector;
