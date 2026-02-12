@@ -36,6 +36,7 @@ public class FVPlainText {
 	 * 
 	 * @param encoder the encoder used to encode the long data into a polynomial
 	 * @param data the data to encode
+	 * @throws RuntimeException if the data length does not match the encoder parameters
 	 */
 	public void encode(FVEncoder encoder, long[] data)
 	{
@@ -49,7 +50,8 @@ public class FVPlainText {
 	 * Consistency between the size of the polynomial and the encoder parameters is checked within the encoder
 	 * 
 	 * @param encoder the encoder to use for the decoding
-	 * @return
+	 * @return decoded long array with the plaintext slot values
+	 * @throws RuntimeException if the plaintext polynomial does not match encoder parameters
 	 */
 	public long[] decode(FVEncoder encoder)
 	{
@@ -76,6 +78,7 @@ public class FVPlainText {
 	 * 
 	 * @param pubKey public key to use for the encryption
 	 * @return a FVCipherText with the encrypted data in it
+	 * @throws RuntimeException if the plaintext parameters do not match the public key
 	 * 
 	 */
 	public FVCipherText encrypt(FVPublicKey pubKey)

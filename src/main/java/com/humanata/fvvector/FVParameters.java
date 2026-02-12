@@ -88,7 +88,7 @@ public class FVParameters {
      * A conservative parameter set that gives 128 bits of security and 2048 vector size.
      * Has 32 bits for the plaintext, 56 for the ciphertext, giving q/t of 24 bits.
      */
-    public static final FVParameters FVParamsN2048S128  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, defaultNoiseSD, 8); //19 bits in t, 29 bits in q
+    public static final FVParameters FVParamsN2048S128  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, defaultNoiseSD, 8); //32 bits in t, 56 bits in q
  
     /**
      * A conservative parameter set that gives 128 bits of security and 2048 vector size.
@@ -106,7 +106,7 @@ public class FVParameters {
      * <b>Testing only — do not use in a real setting.</b> Insecure parameters with near-zero noise.
      * Use {@link #FVParamsN2048S128} for real encryption.
      */
-    public static final FVParameters FVParamsN2048S128insecure  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, 0.0000000001, 8); //19 bits in t, 29 bits in q
+    public static final FVParameters FVParamsN2048S128insecure  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, 0.0000000001, 8); //32 bits in t, 56 bits in q
     
    
     

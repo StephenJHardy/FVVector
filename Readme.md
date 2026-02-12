@@ -42,6 +42,7 @@ The library as implemented allows the encryption of power of two vector lengths 
 * addition of encrypted vectors
 * multiplication of encrypted vectors
 * certain rotations and permutations of the elements
+* sum of all slots into the first slot (`sumIntoFirstSlot`)
 * decryption of the vectors
 
 As implemented, the library allows the use of moduli up to 63 bits in size. This limits the number of arithmetic and rotation operations that can be done while still allowing correct decryption of the results.
@@ -51,6 +52,7 @@ As implemented, the library allows the use of moduli up to 63 bits in size. This
 **This library is not suitable for production use.** See the disclaimer above.
 
 * **Parameter selection:** Use only the standard parameter presets. Do **not** use the `*insecure` variants outside of unit tests — they use near-zero noise and offer no real security.
+* **Noise growth:** Multiplication increases noise quickly. Repeated multiplications can cause decryption failures even with valid parameters.
 * **Constant-time operations:** The library does not provide constant-time guarantees. Side-channel attacks may be possible.
 * **Serialization:** Keys and ciphertexts cannot be serialized. Keep them in memory only.
 
@@ -82,10 +84,11 @@ The basic information about the cryptosystem that is being used is contained in 
 * number of bits available to encode numbers as a plain text
 * number of bits of headroom available for homomorphic operations
 
-Setting these parameters can be quite complicated, so there are two convenience types declared that have convenient choices avilable:
+Setting these parameters can be quite complicated, so there are three convenience types declared that have convenient choices available:
 
 **FVParameters.FVParamsN1024S128** - A conservative parameter set that gives 128 bits of security and 1024 vector size. Has 16 bits for the plaintext, 29 for the ciphertext, giving 13 bits of headroom. This is enough for encrypt/decrypt, but not enough for much arithmetic.
 **FVParameters.FVParamsN2048S128** - A conservative parameter set that gives 128 bits of security and 2048 vector size. Has 32 bits for the plaintext, 56 for the ciphertext, giving 24 bits of headroom.
+**FVParameters.FVParamsN2048S128small** - A conservative parameter set that gives 128 bits of security and 2048 vector size. Has 16 bits for the plaintext, 40 for the ciphertext, giving 24 bits of headroom.
 
 
 		
@@ -109,6 +112,7 @@ For convenience, an **FVContext** can be created from the private key, which use
 | slot permutation | interchangeSlotVectors | treat encrypted vector as two rows and swap rows |
 | slot permutation | rotateSlotsLeft | treat encrypted vector as two rows and rotate rows left |
 | slot permutation | rotateSlotsRight | treat encrypted vector as two rows and rotate rows right |
+| slot permutation | sumIntoFirstSlot | sum all slots into slot 0 |
 
 
 ### Detailed approach
@@ -117,7 +121,6 @@ Rather than using the FVContext object to manipulate plaintexts and ciphertexts 
 
 ## Performance
 The library is written wholly in java and all polynomial manipulations in finite fields are done using the Redberry Rings java library. Due to this, several algorithmic optimisations that are used in other libraries have not been implemented (yet). These include representing the ciphertext polynomial coefficients in a residue number system (RNS), and also the use of the Number Theoretic Transform in performing polynomial multiplications. This means that this library is algorithmically slower than other implementations out there. However, because of this, it is significantly easier to understand 
-
 
 
 

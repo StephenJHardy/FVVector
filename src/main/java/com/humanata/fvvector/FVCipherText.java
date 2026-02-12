@@ -72,6 +72,7 @@ public class FVCipherText {
 	 * 
 	 * @param privKey private key for decryption - parameter consistency will be checked.
 	 * @return a FVPlainText object with the decrypted result
+	 * @throws RuntimeException if key parameters do not match the ciphertext parameters
 	 */
 	public FVPlainText decrypt(FVPrivateKey privKey)
 	{
@@ -96,6 +97,7 @@ public class FVCipherText {
 	 * 
 	 * @param field0 first element of the ciphertext as a polynomial
 	 * @param field1 second element of the ciphertext as a polynomial
+	 * @throws RuntimeException if the polynomial modulus does not match ciphertext parameters
 	 */
 	void set(UnivariatePolynomialZp64 field0, UnivariatePolynomialZp64 field1)
 	{
@@ -114,6 +116,7 @@ public class FVCipherText {
 	 * Add the specified ciphertext to this
 	 * 
 	 * @param ct2 ciphertext to add
+	 * @throws RuntimeException if ciphertext parameters do not match
 	 */
 	public void addTo(FVCipherText ct2)
 	{
@@ -138,6 +141,7 @@ public class FVCipherText {
 	 * Subtract the specified ciphertext from this
 	 * 
 	 * @param ct2 ciphertext to subtract
+	 * @throws RuntimeException if ciphertext parameters do not match
 	 */
 	public void subtractFrom(FVCipherText ct2)
 	{
@@ -162,6 +166,7 @@ public class FVCipherText {
 	 * Multiply this by the specified ciphertext
 	 * 
 	 * @param ct2 the ciphertext to multiply by
+	 * @throws RuntimeException if ciphertext parameters do not match
 	 */
 	public void multiplyBy(FVCipherText ct2)
 	{
@@ -186,6 +191,7 @@ public class FVCipherText {
 	 * Multiply this by the specified plaintext
 	 * 
 	 * @param pt the plaintext to multiply by
+	 * @throws RuntimeException if plaintext size does not match ciphertext parameters
 	 */
 	public void multiplyBy(FVPlainText pt)
 	{
@@ -202,6 +208,7 @@ public class FVCipherText {
 	 * Relinearise this ciphertext from three elements to two
 	 * 
 	 * @param rk the key to use for relinearisation
+	 * @throws RuntimeException if key parameters do not match or ciphertext size is not 3
 	 */
 	public void relineariseCubic(FVRelinearisationKey rk)
 	{
@@ -231,6 +238,7 @@ public class FVCipherText {
 	 *  
 	 * @param privKey private key to do the decryption with
 	 * @return double measure from 0.0 to 0.5 - smaller means less noise.
+	 * @throws RuntimeException if key parameters do not match the ciphertext parameters
 	 */
 	public double measureCTNoise(FVPrivateKey privKey)
 	{
@@ -260,6 +268,7 @@ public class FVCipherText {
 	 * 
 	 * @param encoder the encoder for the data stored in the ciphertext
 	 * @param index the element of the basis to use for the rotation
+	 * @throws RuntimeException if ciphertext is not a 2-element ciphertext
 	 */
 	public void rotate(FVEncoder encoder, int index)
 	{
@@ -282,6 +291,7 @@ public class FVCipherText {
 	 * 
 	 * @param rk the key to use for rekeying
 	 * @param rotation the rotation index used
+	 * @throws RuntimeException if key parameters do not match or ciphertext is not 2 elements
 	 */
 	public void rotationRekey(FVRotationKey rk, int rotation)
 	{
@@ -308,6 +318,7 @@ public class FVCipherText {
 	 * number of slots summed, until all slots are summed into slot 0.
 	 *
 	 * @param rk the rotation key for rekeying after each rotation
+	 * @throws RuntimeException if key parameters do not match or ciphertext is not 2 elements
 	 */
 	public void sumIntoFirstSlot(FVRotationKey rk)
 	{

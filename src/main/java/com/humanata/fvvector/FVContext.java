@@ -82,6 +82,7 @@ public class FVContext {
 	 * 
 	 * @param data array of long data to be encrypted - throws on incorrect length
 	 * @return a plaintext object with the data encoded in its slots
+	 * @throws RuntimeException if data length does not match the parameter set
 	 */
 	public FVPlainText encode(long[] data)
 	{
@@ -99,6 +100,7 @@ public class FVContext {
 	 * 
 	 * @param pt  the plaintext to decode
 	 * @return a long array with the values in the slots encoded in the plaintext
+	 * @throws RuntimeException if the plaintext does not match the encoder parameters
 	 */
 	public long[] decode(FVPlainText pt)
 	{
@@ -110,6 +112,7 @@ public class FVContext {
 	 * 
 	 * @param pt plaintext to encrypt
 	 * @return ciphertext with encrypted plaintext
+	 * @throws RuntimeException if plaintext parameters do not match the public key
 	 */
 	public FVCipherText encrypt(FVPlainText pt)
 	{
@@ -121,6 +124,7 @@ public class FVContext {
 	 * 
 	 * @param data the data to encrypt
 	 * @return a cipher text object with the encrypted data
+	 * @throws RuntimeException if data length does not match the parameter set
 	 */
 	public FVCipherText encodeAndEncrypt(long[] data)
 	{
@@ -133,6 +137,7 @@ public class FVContext {
 	 * @param ct ciphertext to decrypt
 	 * @param pk private key to use
 	 * @return a plaintext with data encoded in the slots
+	 * @throws RuntimeException if key parameters do not match the ciphertext parameters
 	 */
 	public FVPlainText decrypt(FVCipherText ct, FVPrivateKey pk)
 	{
@@ -145,6 +150,7 @@ public class FVContext {
 	 * @param ct ciphertext to decrypt and decode
 	 * @param pk private key to use
 	 * @return an array with the decoded data
+	 * @throws RuntimeException if key parameters do not match the ciphertext parameters
 	 */
 	public long[] decryptAndDecode(FVCipherText ct, FVPrivateKey pk)
 	{
@@ -157,6 +163,7 @@ public class FVContext {
 	 * @param ct1 first operand
 	 * @param ct2 second operand
 	 * @return new ciphertext with the result
+	 * @throws RuntimeException if ciphertext parameters do not match
 	 */
 	public FVCipherText add(FVCipherText ct1, FVCipherText ct2)
 	{
@@ -171,6 +178,7 @@ public class FVContext {
 	 * @param ct1 first operand
 	 * @param ct2 second operand
 	 * @return new ciphertext with the result
+	 * @throws RuntimeException if ciphertext parameters do not match
 	 */
 	public FVCipherText subtract(FVCipherText ct1, FVCipherText ct2)
 	{
@@ -185,6 +193,7 @@ public class FVContext {
 	 * @param ct1 first operand
 	 * @param ct2 second operand
 	 * @return new ciphertext with the result
+	 * @throws RuntimeException if ciphertext parameters do not match
 	 */
 	public FVCipherText multiplyWithoutRelinearisation(FVCipherText ct1, FVCipherText ct2)
 	{
@@ -199,6 +208,7 @@ public class FVContext {
 	 * @param ct1 first operand
 	 * @param ct2 second operand
 	 * @return new ciphertext with the relinearised result
+	 * @throws RuntimeException if ciphertext parameters do not match
 	 */
 	public FVCipherText multiply(FVCipherText ct1, FVCipherText ct2)
 	{
@@ -215,6 +225,7 @@ public class FVContext {
 	 * @param ct1 first operand
 	 * @param pt2 second operand
 	 * @return new ciphertext with the result
+	 * @throws RuntimeException if plaintext size does not match the ciphertext parameters
 	 */
 	public FVCipherText multiply(FVCipherText ct1, FVPlainText pt2)
 	{
@@ -230,6 +241,7 @@ public class FVContext {
 	 * @param pt1 first operand
 	 * @param ct2 second operand
 	 * @return new ciphertext with the result
+	 * @throws RuntimeException if plaintext size does not match the ciphertext parameters
 	 */
 	public FVCipherText multiply(FVPlainText pt1, FVCipherText ct2)
 	{
@@ -243,6 +255,7 @@ public class FVContext {
 	 * 
 	 * @param input ciphertext to transform
 	 * @return new ciphertext with transformed result
+	 * @throws RuntimeException if ciphertext is not a 2-element ciphertext
 	 */
 	public FVCipherText interchangeSlotVectors(FVCipherText input)
 	{
@@ -257,6 +270,7 @@ public class FVContext {
 	 * 
 	 * @param input ciphertext to transform
 	 * @return new ciphertext with transformed result
+	 * @throws RuntimeException if ciphertext is not a 2-element ciphertext
 	 */
 	public FVCipherText rotateSlotsLeft(FVCipherText input, int toLeft)
 	{
@@ -271,6 +285,7 @@ public class FVContext {
 	 * 
 	 * @param input ciphertext to transform
 	 * @return new ciphertext with transformed result
+	 * @throws RuntimeException if ciphertext is not a 2-element ciphertext
 	 */
 	public FVCipherText rotateSlotsRight(FVCipherText input, int toRight)
 	{
@@ -287,6 +302,7 @@ public class FVContext {
 	 *
 	 * @param input ciphertext whose slots to sum
 	 * @return new ciphertext with the sum in slot 0
+	 * @throws RuntimeException if ciphertext is not a 2-element ciphertext
 	 */
 	public FVCipherText sumIntoFirstSlot(FVCipherText input)
 	{
