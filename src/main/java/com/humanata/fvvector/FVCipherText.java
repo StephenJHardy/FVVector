@@ -1,5 +1,12 @@
 package com.humanata.fvvector;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import com.humanata.fvvector.FVPlainText;
@@ -22,7 +29,7 @@ import static cc.redberry.rings.Rings.*;
  * Given a compatible private key, it can decrypt to a plaintext.
  * <p>
  * <b>For experimentation and learning only.</b> Not for production use.
- * This class does not support serialization.
+ * This class supports serialization via {@code toBytes}/{@code fromBytes}.
  */
 public class FVCipherText {
 
@@ -347,6 +354,72 @@ public class FVCipherText {
 		}
 
 		// After Step 2, every slot contains the sum; slot 0 is the result.
+	}
+
+	/**
+	 * Serialize this ciphertext to a byte array.
+	 *
+	 * @return serialized ciphertext bytes
+	 */
+	public byte[] toBytes()
+	{
+		try {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			DataOutputStream out = new DataOutputStream(baos);
+			writeTo(out);
+			out.flush();
+			return baos.toByteArray();
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to serialize ciphertext", e);
+		}
+	}
+
+	/**
+	 * Serialize this ciphertext to a data output stream.
+	 *
+	 * @param out destination stream
+	 * @throws IOException if the stream cannot be written
+	 */
+	public void writeTo(DataOutput out) throws IOException
+	{
+		FVSerialization.writeParameters(params, out);
+		FVSerialization.writePolynomialList(polys, out);
+	}
+
+	/**
+	 * Deserialize a ciphertext from a byte array.
+	 *
+	 * @param data serialized ciphertext bytes
+	 * @return deserialized ciphertext
+	 */
+	public static FVCipherText fromBytes(byte[] data)
+	{
+		try {
+			DataInputStream in = new DataInputStream(new ByteArrayInputStream(data));
+			return readFrom(in);
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to deserialize ciphertext", e);
+		}
+	}
+
+	/**
+	 * Deserialize a ciphertext from a data input stream.
+	 *
+	 * @param in source stream
+	 * @return deserialized ciphertext
+	 * @throws IOException if the stream cannot be read
+	 */
+	public static FVCipherText readFrom(DataInput in) throws IOException
+	{
+		FVParameters params = FVSerialization.readParameters(in);
+		ArrayList<UnivariatePolynomialZp64> polys = FVSerialization.readPolynomialList(in, params.coefficientModulus);
+		if (polys.isEmpty()) {
+			throw new IOException("Ciphertext must contain at least one polynomial");
+		}
+		FVCipherText ct = new FVCipherText(params);
+		ct.polys.clear();
+		ct.polys.addAll(polys);
+		return ct;
 	}
 
 }

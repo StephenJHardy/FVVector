@@ -1,5 +1,12 @@
 package com.humanata.fvvector;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
@@ -9,6 +16,7 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
  * This class represents a set of keys for the FV cryptosystem that allows a ciphertext
  * with three elements to be reduced to a ciphertext with only two elements, at the expense
  * of some additional noise in the ciphertext.
+ * It supports serialization via {@code toBytes}/{@code fromBytes}.
  *
  * @author har991
  *
@@ -56,6 +64,81 @@ public class FVRelinearisationKey {
 			polys0.add(r);
 			polys1.add(a);	
 		}
+	}
+
+	FVRelinearisationKey(FVParameters params,
+			ArrayList< UnivariatePolynomialZp64 > polys0,
+			ArrayList< UnivariatePolynomialZp64 > polys1)
+	{
+		if(polys0.size() != polys1.size())
+			throw new RuntimeException("Relinearisation key polynomial list sizes do not match");
+		if(polys0.size() != params.l + 1)
+			throw new RuntimeException("Relinearisation key polynomial list has incorrect size");
+		this.params = params;
+		this.polys0 = polys0;
+		this.polys1 = polys1;
+	}
+
+	/**
+	 * Serialize this relinearisation key to a byte array.
+	 *
+	 * @return serialized relinearisation key bytes
+	 */
+	public byte[] toBytes()
+	{
+		try {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			DataOutputStream out = new DataOutputStream(baos);
+			writeTo(out);
+			out.flush();
+			return baos.toByteArray();
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to serialize relinearisation key", e);
+		}
+	}
+
+	/**
+	 * Serialize this relinearisation key to a data output stream.
+	 *
+	 * @param out destination stream
+	 * @throws IOException if the stream cannot be written
+	 */
+	public void writeTo(DataOutput out) throws IOException
+	{
+		FVSerialization.writeParameters(params, out);
+		FVSerialization.writePolynomialList(polys0, out);
+		FVSerialization.writePolynomialList(polys1, out);
+	}
+
+	/**
+	 * Deserialize a relinearisation key from a byte array.
+	 *
+	 * @param data serialized relinearisation key bytes
+	 * @return deserialized relinearisation key
+	 */
+	public static FVRelinearisationKey fromBytes(byte[] data)
+	{
+		try {
+			DataInputStream in = new DataInputStream(new ByteArrayInputStream(data));
+			return readFrom(in);
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to deserialize relinearisation key", e);
+		}
+	}
+
+	/**
+	 * Deserialize a relinearisation key from a data input stream.
+	 *
+	 * @param in source stream
+	 * @return deserialized relinearisation key
+	 * @throws IOException if the stream cannot be read
+	 */
+	public static FVRelinearisationKey readFrom(DataInput in) throws IOException
+	{
+		FVParameters params = FVSerialization.readParameters(in);
+		ArrayList< UnivariatePolynomialZp64 > polys0 = FVSerialization.readPolynomialList(in, params.coefficientModulus);
+		ArrayList< UnivariatePolynomialZp64 > polys1 = FVSerialization.readPolynomialList(in, params.coefficientModulus);
+		return new FVRelinearisationKey(params, polys0, polys1);
 	}
 	
 	

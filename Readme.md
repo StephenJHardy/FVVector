@@ -54,7 +54,7 @@ As implemented, the library allows the use of moduli up to 63 bits in size. This
 * **Parameter selection:** Use only the standard parameter presets. Do **not** use the `*insecure` variants outside of unit tests — they use near-zero noise and offer no real security.
 * **Noise growth:** Multiplication increases noise quickly. Repeated multiplications can cause decryption failures even with valid parameters.
 * **Constant-time operations:** The library does not provide constant-time guarantees. Side-channel attacks may be possible.
-* **Serialization:** Keys and ciphertexts cannot be serialized. Keep them in memory only.
+* **Serialization:** Keys, ciphertexts, and plaintexts can be serialized via `toBytes`/`fromBytes`. Treat serialized material as sensitive and protect it at rest and in transit.
 
 ## Structure
 
@@ -118,10 +118,13 @@ For convenience, an **FVContext** can be created from the private key, which use
 ### Detailed approach
 Rather than using the FVContext object to manipulate plaintexts and ciphertexts directly, it is possible to use the methods of the objects directly. Consult the javadocs for the classes for details.
 
+## Serialization
+Keys, ciphertexts, and plaintexts can be serialized for storage or transport using the `toBytes` and `fromBytes` methods.
+The format is a simple binary encoding and is not guaranteed to be stable across major versions.
+
 
 ## Performance
 The library is written wholly in java and all polynomial manipulations in finite fields are done using the Redberry Rings java library. Due to this, several algorithmic optimisations that are used in other libraries have not been implemented (yet). These include representing the ciphertext polynomial coefficients in a residue number system (RNS), and also the use of the Number Theoretic Transform in performing polynomial multiplications. This means that this library is algorithmically slower than other implementations out there. However, because of this, it is significantly easier to understand 
-
 
 
 

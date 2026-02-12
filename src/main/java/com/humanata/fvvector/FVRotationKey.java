@@ -1,8 +1,12 @@
 package com.humanata.fvvector;
 
-import java.io.FileWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
@@ -10,6 +14,7 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 /**
  * Represents a set of rotation keys for the FV cryptosystem that allow
  * slot rotations and permutations to be rekeyed back to the original secret key.
+ * It supports serialization via {@code toBytes}/{@code fromBytes}.
  *
  * @author har991
  */
@@ -76,6 +81,26 @@ public class FVRotationKey {
 		}	
 	}
 
+	FVRotationKey(FVParameters params,
+			FVEncoder encoder,
+			ArrayList< ArrayList< UnivariatePolynomialZp64 > > keys0,
+			ArrayList< ArrayList< UnivariatePolynomialZp64 > > keys1)
+	{
+		int expectedKeys = (int) params.polynomialModulusExponent / 2 + 1;
+		int expectedElements = (int) params.l + 1;
+		if(keys0.size() != expectedKeys || keys1.size() != expectedKeys)
+			throw new RuntimeException("Rotation key list has incorrect size");
+		for (int i = 0; i < expectedKeys; i++) {
+			if (keys0.get(i).size() != expectedElements || keys1.get(i).size() != expectedElements) {
+				throw new RuntimeException("Rotation key element list has incorrect size");
+			}
+		}
+		this.params = params;
+		this.encoder = encoder;
+		this.keys0 = keys0;
+		this.keys1 = keys1;
+	}
+
 	public int numberOfKeys()
 	{
 		return (int)params.polynomialModulusExponent/2 + 1;
@@ -122,6 +147,71 @@ public class FVRotationKey {
 	public ArrayList< UnivariatePolynomialZp64 > getSecondRekeyingPolynomials(int index)
 	{
 		return keys1.get(index);
+	}
+
+	/**
+	 * Serialize this rotation key to a byte array.
+	 *
+	 * @return serialized rotation key bytes
+	 */
+	public byte[] toBytes()
+	{
+		try {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			DataOutputStream out = new DataOutputStream(baos);
+			writeTo(out);
+			out.flush();
+			return baos.toByteArray();
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to serialize rotation key", e);
+		}
+	}
+
+	/**
+	 * Serialize this rotation key to a data output stream.
+	 *
+	 * @param out destination stream
+	 * @throws IOException if the stream cannot be written
+	 */
+	public void writeTo(DataOutput out) throws IOException
+	{
+		FVSerialization.writeParameters(params, out);
+		FVSerialization.writePolynomial2dList(keys0, out);
+		FVSerialization.writePolynomial2dList(keys1, out);
+	}
+
+	/**
+	 * Deserialize a rotation key from a byte array.
+	 *
+	 * @param data serialized rotation key bytes
+	 * @return deserialized rotation key
+	 */
+	public static FVRotationKey fromBytes(byte[] data)
+	{
+		try {
+			DataInputStream in = new DataInputStream(new ByteArrayInputStream(data));
+			return readFrom(in);
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to deserialize rotation key", e);
+		}
+	}
+
+	/**
+	 * Deserialize a rotation key from a data input stream.
+	 *
+	 * @param in source stream
+	 * @return deserialized rotation key
+	 * @throws IOException if the stream cannot be read
+	 */
+	public static FVRotationKey readFrom(DataInput in) throws IOException
+	{
+		FVParameters params = FVSerialization.readParameters(in);
+		FVEncoder encoder = new FVEncoder(params);
+		ArrayList< ArrayList< UnivariatePolynomialZp64 > > keys0 =
+				FVSerialization.readPolynomial2dList(in, params.coefficientModulus);
+		ArrayList< ArrayList< UnivariatePolynomialZp64 > > keys1 =
+				FVSerialization.readPolynomial2dList(in, params.coefficientModulus);
+		return new FVRotationKey(params, encoder, keys0, keys1);
 	}
 
 }

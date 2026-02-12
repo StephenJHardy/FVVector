@@ -11,6 +11,13 @@ import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.IntegersZp64;
@@ -47,7 +54,8 @@ public class FVParameters {
 	public enum SecurityParam {
 	    BITS_128, BITS_192 
 	};
-	
+
+	private final SecurityParam securityParam;
 	public static final int maxCoefficientBits = Long.SIZE - 3;
 	public static final long maxCoefficientModulus = (1L << maxCoefficientBits);
 	public static final int maxPolynomialExponent = 32768;
@@ -145,6 +153,7 @@ public class FVParameters {
      */
 	public FVParameters(SecurityParam bos, long n, long q, long t, double sigma, long decompBase)
 	{
+		this.securityParam = bos;
 		this.coefficientModulus = q;
 		this.polynomialModulusExponent = n;
 		this.plainTextModulus = t;
@@ -153,6 +162,104 @@ public class FVParameters {
 		this.l = (long)Math.floor(Math.log(q)/Math.log(decompBase));
 		CheckParameterConsistency(bos);
 		ConstructPolynomialFields();
+	}
+
+	/**
+	 * Returns the security parameter used to construct this parameter set.
+	 *
+	 * @return the SecurityParam level
+	 */
+	public SecurityParam getSecurityParam()
+	{
+		return securityParam;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof FVParameters)) {
+			return false;
+		}
+		FVParameters other = (FVParameters) obj;
+		return securityParam == other.securityParam
+				&& coefficientModulus == other.coefficientModulus
+				&& plainTextModulus == other.plainTextModulus
+				&& polynomialModulusExponent == other.polynomialModulusExponent
+				&& decompositionBase == other.decompositionBase
+				&& Double.compare(noiseStandardDeviation, other.noiseStandardDeviation) == 0;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		int result = securityParam.hashCode();
+		result = 31 * result + Long.hashCode(coefficientModulus);
+		result = 31 * result + Long.hashCode(plainTextModulus);
+		result = 31 * result + Long.hashCode(polynomialModulusExponent);
+		result = 31 * result + Long.hashCode(decompositionBase);
+		long tmp = Double.doubleToLongBits(noiseStandardDeviation);
+		result = 31 * result + (int) (tmp ^ (tmp >>> 32));
+		return result;
+	}
+
+	/**
+	 * Serialize this parameter set to a byte array.
+	 *
+	 * @return serialized parameter bytes
+	 */
+	public byte[] toBytes()
+	{
+		try {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			DataOutputStream out = new DataOutputStream(baos);
+			writeTo(out);
+			out.flush();
+			return baos.toByteArray();
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to serialize parameters", e);
+		}
+	}
+
+	/**
+	 * Serialize this parameter set to a data output stream.
+	 *
+	 * @param out destination stream
+	 * @throws IOException if the stream cannot be written
+	 */
+	public void writeTo(DataOutput out) throws IOException
+	{
+		FVSerialization.writeParameters(this, out);
+	}
+
+	/**
+	 * Deserialize a parameter set from a byte array.
+	 *
+	 * @param data serialized parameter bytes
+	 * @return deserialized parameter set
+	 */
+	public static FVParameters fromBytes(byte[] data)
+	{
+		try {
+			DataInputStream in = new DataInputStream(new ByteArrayInputStream(data));
+			return readFrom(in);
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to deserialize parameters", e);
+		}
+	}
+
+	/**
+	 * Deserialize a parameter set from a data input stream.
+	 *
+	 * @param in source stream
+	 * @return deserialized parameter set
+	 * @throws IOException if the stream cannot be read
+	 */
+	public static FVParameters readFrom(DataInput in) throws IOException
+	{
+		return FVSerialization.readParameters(in);
 	}
 	
 	
