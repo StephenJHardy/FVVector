@@ -61,6 +61,16 @@ public class FVContext {
 		this.encoder = encoder;
 	}
 
+	/**
+	 * Returns the encoder used by this context for encoding and decoding slot-packed vectors.
+	 *
+	 * @return the FVEncoder for this context's parameters
+	 */
+	public FVEncoder getEncoder()
+	{
+		return encoder;
+	}
+
 	
 	/**
 	 * Encode a vector of longs into a plaintext according to the encryption
@@ -69,7 +79,7 @@ public class FVContext {
 	 * @param data array of long data to be encrypted - throws on incorrect length
 	 * @return a plaintext object with the data encoded in its slots
 	 */
-	FVPlainText encode(long[] data)
+	public FVPlainText encode(long[] data)
 	{
 		if(data.length != publicKey.params.polynomialModulusExponent)
 			throw new RuntimeException("Data to encode has wrong length");
@@ -86,7 +96,7 @@ public class FVContext {
 	 * @param pt  the plaintext to decode
 	 * @return a long array with the values in the slots encoded in the plaintext
 	 */
-	long[] decode(FVPlainText pt)
+	public long[] decode(FVPlainText pt)
 	{
 		return pt.decode(encoder);
 	}
@@ -94,10 +104,10 @@ public class FVContext {
 	/**
 	 * Encrypt an encoded plaintext into a ciphertext using the public key associated with this context
 	 * 
-	 * @param pt plaintext to encrypte
+	 * @param pt plaintext to encrypt
 	 * @return ciphertext with encrypted plaintext
 	 */
-	FVCipherText encrypt(FVPlainText pt)
+	public FVCipherText encrypt(FVPlainText pt)
 	{
 		return pt.encrypt(publicKey);
 	}
@@ -108,7 +118,7 @@ public class FVContext {
 	 * @param data the data to encrypt
 	 * @return a cipher text object with the encrypted data
 	 */
-	FVCipherText encodeAndEncrypt(long[] data)
+	public FVCipherText encodeAndEncrypt(long[] data)
 	{
 		return encode(data).encrypt(publicKey);
 	}
@@ -120,7 +130,7 @@ public class FVContext {
 	 * @param pk private key to use
 	 * @return a plaintext with data encoded in the slots
 	 */
-	FVPlainText decrypt(FVCipherText ct, FVPrivateKey pk)
+	public FVPlainText decrypt(FVCipherText ct, FVPrivateKey pk)
 	{
 		return ct.decrypt(pk);
 	}
@@ -132,7 +142,7 @@ public class FVContext {
 	 * @param pk private key to use
 	 * @return an array with the decoded data
 	 */
-	long[] decryptAndDecode(FVCipherText ct, FVPrivateKey pk)
+	public long[] decryptAndDecode(FVCipherText ct, FVPrivateKey pk)
 	{
 		return decode(decrypt(ct, pk));
 	}
@@ -144,7 +154,7 @@ public class FVContext {
 	 * @param ct2 second operand
 	 * @return new ciphertext with the result
 	 */
-	FVCipherText add(FVCipherText ct1, FVCipherText ct2)
+	public FVCipherText add(FVCipherText ct1, FVCipherText ct2)
 	{
 		FVCipherText ret = new FVCipherText(ct1);
 		ret.addTo(ct2);
@@ -158,7 +168,7 @@ public class FVContext {
 	 * @param ct2 second operand
 	 * @return new ciphertext with the result
 	 */
-	FVCipherText subtract(FVCipherText ct1, FVCipherText ct2)
+	public FVCipherText subtract(FVCipherText ct1, FVCipherText ct2)
 	{
 		FVCipherText ret = new FVCipherText(ct1);
 		ret.subtractFrom(ct2);
@@ -172,7 +182,7 @@ public class FVContext {
 	 * @param ct2 second operand
 	 * @return new ciphertext with the result
 	 */
-	FVCipherText multiplyWithoutRelinearisation(FVCipherText ct1, FVCipherText ct2)
+	public FVCipherText multiplyWithoutRelinearisation(FVCipherText ct1, FVCipherText ct2)
 	{
 		FVCipherText ret = new FVCipherText(ct1);
 		ret.multiplyBy(ct2);
@@ -186,7 +196,7 @@ public class FVContext {
 	 * @param ct2 second operand
 	 * @return new ciphertext with the relinearised result
 	 */
-	FVCipherText multiply(FVCipherText ct1, FVCipherText ct2)
+	public FVCipherText multiply(FVCipherText ct1, FVCipherText ct2)
 	{
 		FVCipherText ret = new FVCipherText(ct1);
 		ret.multiplyBy(ct2);
@@ -200,9 +210,9 @@ public class FVContext {
 	 * 
 	 * @param ct1 first operand
 	 * @param pt2 second operand
-	 * @return new ciphertext with the relinearised result
+	 * @return new ciphertext with the result
 	 */
-	FVCipherText multiply(FVCipherText ct1, FVPlainText pt2)
+	public FVCipherText multiply(FVCipherText ct1, FVPlainText pt2)
 	{
 		FVCipherText ret = new FVCipherText(ct1);
 		ret.multiplyBy(pt2);
@@ -210,14 +220,14 @@ public class FVContext {
 	}
 
 	/**
-	 * Multiply a plaintext by a ciphertext and return a new ciphertext with the result
+	 * Multiply a plaintext by a ciphertext and return a new ciphertext with the result.
 	 * This does not require relinearisation.
 	 * 
 	 * @param pt1 first operand
 	 * @param ct2 second operand
-	 * @return new ciphertext with the relinearised result
+	 * @return new ciphertext with the result
 	 */
-	FVCipherText multiply(FVPlainText pt1, FVCipherText ct2)
+	public FVCipherText multiply(FVPlainText pt1, FVCipherText ct2)
 	{
 		FVCipherText ret = new FVCipherText(ct2);
 		ret.multiplyBy(pt1);
@@ -230,7 +240,7 @@ public class FVContext {
 	 * @param input ciphertext to transform
 	 * @return new ciphertext with transformed result
 	 */
-	FVCipherText interchangeSlotVectors(FVCipherText input)
+	public FVCipherText interchangeSlotVectors(FVCipherText input)
 	{
 		FVCipherText ret = new FVCipherText(input);
 		ret.rotate(encoder, encoder.interchangeIndex());
@@ -244,7 +254,7 @@ public class FVContext {
 	 * @param input ciphertext to transform
 	 * @return new ciphertext with transformed result
 	 */
-	FVCipherText rotateSlotsLeft(FVCipherText input, int toLeft)
+	public FVCipherText rotateSlotsLeft(FVCipherText input, int toLeft)
 	{
 		FVCipherText ret = new FVCipherText(input);
 		ret.rotate(encoder, encoder.leftRotateIndex(toLeft));
@@ -258,7 +268,7 @@ public class FVContext {
 	 * @param input ciphertext to transform
 	 * @return new ciphertext with transformed result
 	 */
-	FVCipherText rotateSlotsRight(FVCipherText input, int toRight)
+	public FVCipherText rotateSlotsRight(FVCipherText input, int toRight)
 	{
 		FVCipherText ret = new FVCipherText(input);
 		ret.rotate(encoder, encoder.rightRotateIndex(toRight));
@@ -274,7 +284,7 @@ public class FVContext {
 	 * @param input ciphertext whose slots to sum
 	 * @return new ciphertext with the sum in slot 0
 	 */
-	FVCipherText sumIntoFirstSlot(FVCipherText input)
+	public FVCipherText sumIntoFirstSlot(FVCipherText input)
 	{
 		FVCipherText ret = new FVCipherText(input);
 		ret.sumIntoFirstSlot(rotKey);

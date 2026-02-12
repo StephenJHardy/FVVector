@@ -46,7 +46,7 @@ public class FVEncoder {
 	 * @param params the set of parameters for the encoding mechanism
 	 * 
 	 */
-	FVEncoder(FVParameters params)
+	public FVEncoder(FVParameters params)
 	{
 		this.params = params;
 		this.generatorPowers = PolynomialUtils.CalculateMappingOfRoots(params.polynomialModulusExponent);

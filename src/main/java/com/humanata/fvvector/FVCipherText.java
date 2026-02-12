@@ -61,7 +61,7 @@ public class FVCipherText {
 	 * Return the size of the ciphertext (number of polynomials)
 	 * @return number of polynomials in the ciphertext
 	 */
-	int size()
+	public int size()
 	{
 		return polys.size();
 	}
@@ -71,7 +71,7 @@ public class FVCipherText {
 	 * @param privKey private key for decryption - parameter consistency will be checked.
 	 * @return a FVPlainText object with the decrypted result
 	 */
-	FVPlainText decrypt(FVPrivateKey privKey)
+	public FVPlainText decrypt(FVPrivateKey privKey)
 	{
 		if(!privKey.params.equals(this.params))
 			throw new RuntimeException("Decryption key parameters do not match ciphertext parameters");
@@ -111,9 +111,9 @@ public class FVCipherText {
 	/**
 	 * Add the specified ciphertext to this
 	 * 
-	 * @param ct2 polynomial to add
+	 * @param ct2 ciphertext to add
 	 */
-	void addTo(FVCipherText ct2)
+	public void addTo(FVCipherText ct2)
 	{
 		if(!ct2.params.equals(this.params)) 
 			throw new RuntimeException("Ciphertext parameters in addition do not match");
@@ -135,9 +135,9 @@ public class FVCipherText {
 	/**
 	 * Subtract the specified ciphertext from this
 	 * 
-	 * @param ct2 polynomial to add
+	 * @param ct2 ciphertext to subtract
 	 */
-	void subtractFrom(FVCipherText ct2)
+	public void subtractFrom(FVCipherText ct2)
 	{
 		if(!ct2.params.equals(this.params)) 
 			throw new RuntimeException("Ciphertext parameters in subtraction do not match");
@@ -157,11 +157,11 @@ public class FVCipherText {
 	}
 	
 	/**
-	 * Multiply the this by the specified ciphertext
+	 * Multiply this by the specified ciphertext
 	 * 
-	 * @param ct2 the polynomial to multiply by
+	 * @param ct2 the ciphertext to multiply by
 	 */
-	void multiplyBy(FVCipherText ct2)
+	public void multiplyBy(FVCipherText ct2)
 	{
 		if(!ct2.params.equals(this.params)) 
 			throw new RuntimeException("Ciphertext parameters in multiplication do not match");
@@ -181,11 +181,11 @@ public class FVCipherText {
 	}
 
 	/**
-	 * Multiply the this by the specified plaintext
+	 * Multiply this by the specified plaintext
 	 * 
 	 * @param pt the plaintext to multiply by
 	 */
-	void multiplyBy(FVPlainText pt)
+	public void multiplyBy(FVPlainText pt)
 	{
 		// @todo: add parameters block to plaintext to make this check correct.
 		if(pt.encoding.size() != this.params.polynomialModulusExponent) 
@@ -201,7 +201,7 @@ public class FVCipherText {
 	 * 
 	 * @param rk the key to use for relinearisation
 	 */
-	void relineariseCubic(FVRelinearisationKey rk)
+	public void relineariseCubic(FVRelinearisationKey rk)
 	{
 		if(!rk.params.equals(this.params)) 
 			throw new RuntimeException("Ciphertext parameters in relinearisation key do not match");
@@ -225,12 +225,12 @@ public class FVCipherText {
 	/**
 	 * Decrypt the cipher text and determine what the maximum deviation from the lattice points 
 	 * in the plain text polynomial space is. A number close to 0.5 means that the ciphertext is
-	 * likely not to have decypted properly.
+	 * likely not to have decrypted properly.
 	 *  
 	 * @param privKey private key to do the decryption with
 	 * @return double measure from 0.0 to 0.5 - smaller means less noise.
 	 */
-	double measureCTNoise(FVPrivateKey privKey)
+	public double measureCTNoise(FVPrivateKey privKey)
 	{
 		if(!privKey.params.equals(this.params))
 			throw new RuntimeException("Decryption key parameters do not match ciphertext parameters");
@@ -257,9 +257,9 @@ public class FVCipherText {
 	 * Transform this ciphertext using the given rotation element in the encoder
 	 * 
 	 * @param encoder the encoder for the data stored in the ciphertext
-	 * @param index the element of the basis to usefor the rotation
+	 * @param index the element of the basis to use for the rotation
 	 */
-	void rotate(FVEncoder encoder, int index)
+	public void rotate(FVEncoder encoder, int index)
 	{
 		if(polys.size() != 2)
 			throw new RuntimeException("Rotating a ciphertext with other than 2 elements is not implemented");
@@ -279,8 +279,9 @@ public class FVCipherText {
 	 * Rekey this ciphertext from a rotation of the secret key back to the secret key
 	 * 
 	 * @param rk the key to use for rekeying
+	 * @param rotation the rotation index used
 	 */
-	void rotationRekey(FVRotationKey rk, int rotation)
+	public void rotationRekey(FVRotationKey rk, int rotation)
 	{
 		if(!rk.params.equals(this.params)) 
 			throw new RuntimeException("Ciphertext parameters in rotation key do not match");
@@ -306,7 +307,7 @@ public class FVCipherText {
 	 *
 	 * @param rk the rotation key for rekeying after each rotation
 	 */
-	void sumIntoFirstSlot(FVRotationKey rk)
+	public void sumIntoFirstSlot(FVRotationKey rk)
 	{
 		if(!rk.params.equals(this.params))
 			throw new RuntimeException("Rotation key parameters do not match ciphertext");
