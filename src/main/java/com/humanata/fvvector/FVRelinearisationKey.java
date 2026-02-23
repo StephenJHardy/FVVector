@@ -8,6 +8,9 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
+import java.util.stream.IntStream;
 
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 
@@ -23,7 +26,11 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
  */
 
 public class FVRelinearisationKey {
-	
+
+	private static final int PARALLEL_KEY_THRESHOLD = Integer.getInteger(
+			"fvvector.parallelRelinKeyThreshold", 4);
+	private static final boolean PARALLEL_DISABLED = Boolean.getBoolean("fvvector.disableParallel");
+
 	// Each relinearisation key is represented by a set of two polynomials
 	// These polynomials represented masked noisy versions of the square of the 
 	// secret key.
@@ -45,24 +52,57 @@ public class FVRelinearisationKey {
 		this.params = privKey.params;
 		UnivariatePolynomialZp64 s2 = privKey.params.ctPolyField.multiply(privKey.key(), privKey.key());
 		
-		for(long i=0; i <= params.l; i++)
+		int elements = (int) params.l + 1;
+		if (shouldParallel(elements))
 		{
-			UnivariatePolynomialZp64 a = privKey.params.generaateUniformCTPolynomial();
-			UnivariatePolynomialZp64 e = privKey.params.generateNoiseCTPolynomial();
-		
-			UnivariatePolynomialZp64 r =
-					privKey.params.ctPolyField.add(
-						privKey.params.ctPolyField.negate(
-							privKey.params.ctPolyField.add( 
-								privKey.params.ctPolyField.multiply(a, privKey.key())
-								,  e
-							)
-						),
-						privKey.params.ctPolyField.multiply(s2, (long)Math.pow(params.decompositionBase, i))
-					);
+			UnivariatePolynomialZp64[] local0 = new UnivariatePolynomialZp64[elements];
+			UnivariatePolynomialZp64[] local1 = new UnivariatePolynomialZp64[elements];
 
-			polys0.add(r);
-			polys1.add(a);	
+			IntStream.range(0, elements).parallel().forEach(i -> {
+				UnivariatePolynomialZp64 a = privKey.params.generaateUniformCTPolynomial();
+				UnivariatePolynomialZp64 e = privKey.params.generateNoiseCTPolynomial();
+
+				UnivariatePolynomialZp64 r =
+						privKey.params.ctPolyField.add(
+							privKey.params.ctPolyField.negate(
+								privKey.params.ctPolyField.add(
+									privKey.params.ctPolyField.multiply(a, privKey.key())
+									,  e
+								)
+							),
+							privKey.params.ctPolyField.multiply(s2, (long)Math.pow(params.decompositionBase, i))
+						);
+
+				local0[i] = r;
+				local1[i] = a;
+			});
+
+			for (int i = 0; i < elements; i++) {
+				polys0.add(local0[i]);
+				polys1.add(local1[i]);
+			}
+		}
+		else
+		{
+			for(long i=0; i <= params.l; i++)
+			{
+				UnivariatePolynomialZp64 a = privKey.params.generaateUniformCTPolynomial();
+				UnivariatePolynomialZp64 e = privKey.params.generateNoiseCTPolynomial();
+			
+				UnivariatePolynomialZp64 r =
+						privKey.params.ctPolyField.add(
+							privKey.params.ctPolyField.negate(
+								privKey.params.ctPolyField.add( 
+									privKey.params.ctPolyField.multiply(a, privKey.key())
+									,  e
+								)
+							),
+							privKey.params.ctPolyField.multiply(s2, (long)Math.pow(params.decompositionBase, i))
+						);
+
+				polys0.add(r);
+				polys1.add(a);	
+			}
 		}
 	}
 
@@ -139,6 +179,20 @@ public class FVRelinearisationKey {
 		ArrayList< UnivariatePolynomialZp64 > polys0 = FVSerialization.readPolynomialList(in, params.coefficientModulus);
 		ArrayList< UnivariatePolynomialZp64 > polys1 = FVSerialization.readPolynomialList(in, params.coefficientModulus);
 		return new FVRelinearisationKey(params, polys0, polys1);
+	}
+
+	private static boolean shouldParallel(int elementCount)
+	{
+		if (PARALLEL_DISABLED) {
+			return false;
+		}
+		if (elementCount < PARALLEL_KEY_THRESHOLD) {
+			return false;
+		}
+		if (ForkJoinTask.inForkJoinPool()) {
+			return false;
+		}
+		return ForkJoinPool.getCommonPoolParallelism() > 1;
 	}
 	
 	

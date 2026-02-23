@@ -6,6 +6,10 @@ import static cc.redberry.rings.Rings.Zp64;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
+import java.util.stream.IntStream;
 
 import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.bigint.BigInteger;
@@ -25,6 +29,12 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
  *  
  */
 public class PolynomialUtils {
+
+	private static final int PARALLEL_PAIR_THRESHOLD = Integer.getInteger(
+			"fvvector.parallelPairThreshold", 4);
+	private static final int PARALLEL_DOT_THRESHOLD = Integer.getInteger(
+			"fvvector.parallelDotThreshold", 8);
+	private static final boolean PARALLEL_DISABLED = Boolean.getBoolean("fvvector.disableParallel");
 	
 	/**
 	 * To make rotations of slots work, the roots of unity need to be in
@@ -327,8 +337,24 @@ public class PolynomialUtils {
 			throw new RuntimeException("array sizes must be matching in accumulateDotProduct");
 
 		UnivariatePolynomialZp64 newp = accumulator.clone();
+		int count = parray1.size();
+		if (shouldParallel(count, PARALLEL_DOT_THRESHOLD))
+		{
+			@SuppressWarnings("unchecked")
+			UnivariatePolynomialZp64[] partials = new UnivariatePolynomialZp64[count];
+			IntStream.range(0, count).parallel().forEach(i -> {
+				UnivariatePolynomialZp64 tmp1 = parray1.get(i);
+				UnivariatePolynomialZp64 tmp2 = parray2.get(i);
+				partials[i] = field.multiply(tmp1, tmp2);
+			});
+			for (int i = 0; i < count; i++) {
+				newp = newp.add(partials[i]);
+			}
+			return newp;
+		}
+
 		UnivariatePolynomialZp64 tmp1, tmp2, tmp3;
-		for(int i = 0; i < parray1.size(); i++)
+		for(int i = 0; i < count; i++)
 		{
 			tmp1 = parray1.get(i);
 			tmp2 = parray2.get(i);
@@ -436,22 +462,55 @@ public class PolynomialUtils {
 		
 		// overflow is likely for moduli, so we use big integers
 		ArrayList< UnivariatePolynomial<BigInteger> > bres = new ArrayList< UnivariatePolynomial<BigInteger> >(sz);
-				
 		for(int i = 0; i < sz; i++)
 		{
 			bres.add(UnivariatePolynomial.zero(Z));
 		}
-		
-		for(int i = 0; i < polys1.size(); i++)
+
+		List<UnivariatePolynomial<BigInteger>> big1 = toBigPolys(polys1);
+		List<UnivariatePolynomial<BigInteger>> big2 = toBigPolys(polys2);
+
+		int pairCount = polys1.size() * polys2.size();
+		boolean useParallel = shouldParallel(pairCount, PARALLEL_PAIR_THRESHOLD);
+		if (useParallel)
 		{
-			UnivariatePolynomial<BigInteger> pb1 = polys1.get(i).asPolyZ(true).toBigPoly();
-			
-			for(int j = 0; j < polys2.size(); j++)
-			{				
-				UnivariatePolynomial<BigInteger> pb2 = polys2.get(j).asPolyZ(true).toBigPoly();
-				UnivariatePolynomial<BigInteger> bprod = pb1.clone().multiply(pb2);		
-				UnivariatePolynomial<BigInteger> baccum = bres.get(i+j).add(bprod);
-				bres.set(i+j, baccum);
+			@SuppressWarnings("unchecked")
+			UnivariatePolynomial<BigInteger>[][] partials = new UnivariatePolynomial[polys1.size()][];
+			IntStream.range(0, polys1.size()).parallel().forEach(i -> {
+				UnivariatePolynomial<BigInteger>[] local = new UnivariatePolynomial[sz];
+				for (int k = 0; k < sz; k++) {
+					local[k] = UnivariatePolynomial.zero(Z);
+				}
+				UnivariatePolynomial<BigInteger> pb1 = big1.get(i);
+				for (int j = 0; j < polys2.size(); j++) {
+					UnivariatePolynomial<BigInteger> bprod = pb1.clone().multiply(big2.get(j));
+					int idx = i + j;
+					local[idx] = local[idx].add(bprod);
+				}
+				partials[i] = local;
+			});
+
+			for (int i = 0; i < partials.length; i++) {
+				UnivariatePolynomial<BigInteger>[] local = partials[i];
+				if (local == null) {
+					continue;
+				}
+				for (int k = 0; k < sz; k++) {
+					bres.set(k, bres.get(k).add(local[k]));
+				}
+			}
+		}
+		else
+		{
+			for(int i = 0; i < polys1.size(); i++)
+			{
+				UnivariatePolynomial<BigInteger> pb1 = big1.get(i);
+				for(int j = 0; j < polys2.size(); j++)
+				{
+					UnivariatePolynomial<BigInteger> bprod = pb1.clone().multiply(big2.get(j));
+					int idx = i + j;
+					bres.set(idx, bres.get(idx).add(bprod));
+				}
 			}
 		}
 		
@@ -503,6 +562,29 @@ public class PolynomialUtils {
 			val[(int)newLoc] = poly.get(i)*sign;
 		}
 		return poly.createFromArray(val);
+	}
+
+	private static List<UnivariatePolynomial<BigInteger>> toBigPolys(ArrayList<UnivariatePolynomialZp64> polys)
+	{
+		ArrayList<UnivariatePolynomial<BigInteger>> res = new ArrayList<UnivariatePolynomial<BigInteger>>(polys.size());
+		for (UnivariatePolynomialZp64 poly : polys) {
+			res.add(poly.asPolyZ(true).toBigPoly());
+		}
+		return res;
+	}
+
+	private static boolean shouldParallel(int workCount, int threshold)
+	{
+		if (PARALLEL_DISABLED) {
+			return false;
+		}
+		if (workCount < threshold) {
+			return false;
+		}
+		if (ForkJoinTask.inForkJoinPool()) {
+			return false;
+		}
+		return ForkJoinPool.getCommonPoolParallelism() > 1;
 	}
 	
 }

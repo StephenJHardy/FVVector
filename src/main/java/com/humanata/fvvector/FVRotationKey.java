@@ -8,6 +8,9 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
+import java.util.stream.IntStream;
 
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 
@@ -20,7 +23,10 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
  */
 
 public class FVRotationKey {
-	
+
+	private static final int PARALLEL_KEY_THRESHOLD = Integer.getInteger(
+			"fvvector.parallelRotationKeyThreshold", 16);
+	private static final boolean PARALLEL_DISABLED = Boolean.getBoolean("fvvector.disableParallel");
 
 	FVParameters params;
 	private final FVEncoder encoder;
@@ -45,40 +51,97 @@ public class FVRotationKey {
 		this.params = privKey.params;
 		this.encoder = encoder;
 
-		keys0 = new ArrayList< ArrayList< UnivariatePolynomialZp64 > >(numberOfKeys());
-		keys1 = new ArrayList< ArrayList< UnivariatePolynomialZp64 > >(numberOfKeys());
-				
-		for(int k = 0; k <= params.polynomialModulusExponent/2; k++)
+		int keyCount = numberOfKeys();
+		int elements = elementsPerKey();
+		keys0 = new ArrayList< ArrayList< UnivariatePolynomialZp64 > >(keyCount);
+		keys1 = new ArrayList< ArrayList< UnivariatePolynomialZp64 > >(keyCount);
+
+		if (shouldParallel(keyCount))
 		{
-			keys0.add(new ArrayList< UnivariatePolynomialZp64 > (elementsPerKey()));
-			keys1.add(new ArrayList< UnivariatePolynomialZp64 > (elementsPerKey()));
-			
-			for(long i=0; i <= params.l; i++)
-			{
-				UnivariatePolynomialZp64 srot = PolynomialUtils.coeffTransform(privKey.key().clone(), encoder.generatorPowers[k], params.polynomialModulusExponent);
-				UnivariatePolynomialZp64 smod = 
+			@SuppressWarnings("unchecked")
+			ArrayList<UnivariatePolynomialZp64>[] local0 = new ArrayList[keyCount];
+			@SuppressWarnings("unchecked")
+			ArrayList<UnivariatePolynomialZp64>[] local1 = new ArrayList[keyCount];
+
+			IntStream.range(0, keyCount).parallel().forEach(k -> {
+				ArrayList<UnivariatePolynomialZp64> k0 = new ArrayList<UnivariatePolynomialZp64>(elements);
+				ArrayList<UnivariatePolynomialZp64> k1 = new ArrayList<UnivariatePolynomialZp64>(elements);
+
+				UnivariatePolynomialZp64 srot =
+						PolynomialUtils.coeffTransform(privKey.key().clone(),
+								encoder.generatorPowers[k],
+								params.polynomialModulusExponent);
+				UnivariatePolynomialZp64 smod =
 						privKey.params.ctPolyField.add(
 								privKey.params.ctPolyField.negate(privKey.key()),
 								srot);
-				
-				UnivariatePolynomialZp64 a = privKey.params.generaateUniformCTPolynomial();
-				UnivariatePolynomialZp64 e = privKey.params.generateNoiseCTPolynomial();
-			
-				UnivariatePolynomialZp64 r =
-						privKey.params.ctPolyField.add(
-							privKey.params.ctPolyField.negate(
-								privKey.params.ctPolyField.add( 
-									privKey.params.ctPolyField.multiply(a, privKey.key())
-									,  e
-								)
-							),
-							privKey.params.ctPolyField.multiply(smod, (long)Math.pow(params.decompositionBase, i))
-						);
-	
-				keys0.get(k).add(r.copy());
-				keys1.get(k).add(a.copy());	
+
+				for(long i=0; i <= params.l; i++)
+				{
+					UnivariatePolynomialZp64 a = privKey.params.generaateUniformCTPolynomial();
+					UnivariatePolynomialZp64 e = privKey.params.generateNoiseCTPolynomial();
+
+					UnivariatePolynomialZp64 r =
+							privKey.params.ctPolyField.add(
+								privKey.params.ctPolyField.negate(
+									privKey.params.ctPolyField.add(
+										privKey.params.ctPolyField.multiply(a, privKey.key())
+										,  e
+									)
+								),
+								privKey.params.ctPolyField.multiply(smod, (long)Math.pow(params.decompositionBase, i))
+							);
+
+					k0.add(r.copy());
+					k1.add(a.copy());
+				}
+
+				local0[k] = k0;
+				local1[k] = k1;
+			});
+
+			for (int k = 0; k < keyCount; k++) {
+				keys0.add(local0[k]);
+				keys1.add(local1[k]);
 			}
-		}	
+		}
+		else
+		{
+			for(int k = 0; k < keyCount; k++)
+			{
+				keys0.add(new ArrayList< UnivariatePolynomialZp64 > (elements));
+				keys1.add(new ArrayList< UnivariatePolynomialZp64 > (elements));
+
+				UnivariatePolynomialZp64 srot =
+						PolynomialUtils.coeffTransform(privKey.key().clone(),
+								encoder.generatorPowers[k],
+								params.polynomialModulusExponent);
+				UnivariatePolynomialZp64 smod =
+						privKey.params.ctPolyField.add(
+								privKey.params.ctPolyField.negate(privKey.key()),
+								srot);
+
+				for(long i=0; i <= params.l; i++)
+				{
+					UnivariatePolynomialZp64 a = privKey.params.generaateUniformCTPolynomial();
+					UnivariatePolynomialZp64 e = privKey.params.generateNoiseCTPolynomial();
+
+					UnivariatePolynomialZp64 r =
+							privKey.params.ctPolyField.add(
+								privKey.params.ctPolyField.negate(
+									privKey.params.ctPolyField.add(
+										privKey.params.ctPolyField.multiply(a, privKey.key())
+										,  e
+									)
+								),
+								privKey.params.ctPolyField.multiply(smod, (long)Math.pow(params.decompositionBase, i))
+							);
+
+					keys0.get(k).add(r.copy());
+					keys1.get(k).add(a.copy());
+				}
+			}
+		}
 	}
 
 	FVRotationKey(FVParameters params,
@@ -109,6 +172,20 @@ public class FVRotationKey {
 	public int elementsPerKey()
 	{
 		return (int)params.l + 1;
+	}
+
+	private static boolean shouldParallel(int keyCount)
+	{
+		if (PARALLEL_DISABLED) {
+			return false;
+		}
+		if (keyCount < PARALLEL_KEY_THRESHOLD) {
+			return false;
+		}
+		if (ForkJoinTask.inForkJoinPool()) {
+			return false;
+		}
+		return ForkJoinPool.getCommonPoolParallelism() > 1;
 	}
 
 	/**
