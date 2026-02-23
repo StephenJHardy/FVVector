@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.security.SecureRandom;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import com.humanata.fvvector.FVParameters.SecurityParam;
 import org.junit.jupiter.api.BeforeAll;
@@ -19,8 +20,8 @@ class FVCipherTextTest {
 	@BeforeAll
 	public static void preClassSetup()
 	{
-		//params = FVParameters.FVParamsN1024S128;
-		params = FVParameters.generateParameterSet(FVParameters.SecurityParam.BITS_128, 2048, 14, 56-14);
+		// Insecure parameters for faster tests; do not use in production.
+		params = FVParameters.FVParamsN1024S128insecure;
 		priv = new FVPrivateKey(params);
 		pub = new FVPublicKey(priv);
 		encoder = new FVEncoder(params);
@@ -283,6 +284,7 @@ class FVCipherTextTest {
 	}
 
 	@Test
+	@Tag("slow")
 	public void testRotate() throws Exception {
 		FVRotationKey rotKey = new FVRotationKey(priv, encoder);
 		

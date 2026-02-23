@@ -239,7 +239,7 @@ class PolynomialUtilsTest {
 	}
 	
 	@Test
-	public void testDotProducWithPowers() throws Exception {
+	public void testDotProductWithPowers() throws Exception {
 		int polyorder = 16;
 		long modulus = 1627389952L;
 		FiniteField<UnivariatePolynomialZp64> field = getGaloisField(modulus, polyorder);
@@ -266,7 +266,7 @@ class PolynomialUtilsTest {
 		UnivariatePolynomialZp64 atom = UnivariatePolynomialZp64.create(modulus,data3);
 		
 		UnivariatePolynomialZp64 result = 
-				PolynomialUtils.dotProducWithPowers(field,polys,atom); 
+				PolynomialUtils.dotProductWithPowers(field,polys,atom); 
 
 		long groundTruth[] = {838860802, 1023410178, 117440505, 301989895, 1459617784, 788529158, 
 				838860801, 335544317, 603979783, 1224736757, 318767113, 536870909, 
@@ -455,7 +455,7 @@ class PolynomialUtilsTest {
 
 
 	@Test
-	public void testAccumulateDotProduct() throws Exception {
+	public void testMultiplyPolyArrayByPoly() throws Exception {
 		long polysdat[][] = {{1458432931, 1173437195, 179479392, 1056868531, 1459955958, 
 			  632124503, 686379211, 163624770, 99410419, 1256173979, 1565436048, 
 			  632367175, 351676046, 1583909151, 752380704, 
@@ -465,7 +465,6 @@ class PolynomialUtilsTest {
 		long polydat[] = {1096630608, 1049230258, 679069701, 605434728, 1429414625, 255830449,
 			   848989006, 936724135, 843453415, 1079292505, 26291644, 1271341684, 
 			   634065915, 3611514, 812261168, 765873246};
-		long modulus1 = 97L;
 		long modulus2 = 1627389952L;
 		ArrayList<UnivariatePolynomialZp64> polys = 
 				new ArrayList<UnivariatePolynomialZp64>(2);
@@ -495,8 +494,47 @@ class PolynomialUtilsTest {
 				assertEquals(groundtruth[i][j], res.get(i).get(j));
 			}
 		}
-		
-	
-	
+	}
+
+	@Test
+	public void testAccumulateDotProduct() throws Exception {
+		// accumulateDotProduct returns accumulator + sum_i(parray1[i] * parray2[i])
+		int polyorder = 16;
+		long modulus = 1627389952L;
+		FiniteField<UnivariatePolynomialZp64> field = getGaloisField(modulus, polyorder);
+
+		long parray1dat[][] = {{535417598, 459739854, 393993695, 65288407, 1346239599, 1429464185, 
+			  1617922892, 804881775, 1576327223, 60414693, 778580286, 188536349, 
+			  1050432109, 361087802, 475650388, 50355034}, {977890589, 1149292142,
+			  61060148, 1199448384, 937063050, 1616518840, 1435396478, 
+			  1036227190, 1291512469, 475990730, 945694949, 1128025572, 441222545,
+			  1573314755, 584431117, 315811798}};
+		long parray2dat[][] = {{123662957, 1335634052, 1412800419, 1409469544, 869349960, 999054466, 
+			  1233748006, 516568274, 1351201799, 506835391, 1099267513, 99858481, 
+			  1548489501, 725554011, 1161686630, 138256546}, {19, 45, 67, 77, 78, 52, 30, 20, 
+			  46, 69, 42, 63, 51, 28, 55, 34}};
+		long accdat[] = {100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600};
+
+		ArrayList<UnivariatePolynomialZp64> parray1 = new ArrayList<>();
+		parray1.add(UnivariatePolynomialZp64.create(modulus, parray1dat[0]));
+		parray1.add(UnivariatePolynomialZp64.create(modulus, parray1dat[1]));
+
+		ArrayList<UnivariatePolynomialZp64> parray2 = new ArrayList<>();
+		parray2.add(UnivariatePolynomialZp64.create(modulus, parray2dat[0]));
+		parray2.add(UnivariatePolynomialZp64.create(modulus, parray2dat[1]));
+
+		UnivariatePolynomialZp64 accumulator = UnivariatePolynomialZp64.create(modulus, accdat);
+
+		UnivariatePolynomialZp64 result = PolynomialUtils.accumulateDotProduct(field, accumulator, parray1, parray2);
+
+		// Expected: accumulator + parray1[0]*parray2[0] + parray1[1]*parray2[1]
+		UnivariatePolynomialZp64 expected = accumulator.clone();
+		expected = expected.add(field.multiply(parray1.get(0), parray2.get(0)));
+		expected = expected.add(field.multiply(parray1.get(1), parray2.get(1)));
+
+		for(int i = 0; i < polyorder; i++)
+		{
+			assertEquals(expected.get(i), result.get(i), "accumulateDotProduct coefficient " + i);
+		}
 	}
 }

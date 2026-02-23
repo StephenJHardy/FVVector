@@ -6,19 +6,31 @@ import java.security.SecureRandom;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 
 
 class FVVectorTest {
 
 	static FVParameters ps;
 	static FVPrivateKey privKey;
+	static FVPublicKey pubKey;
+	static FVEncoder encoder;
+	static FVRelinearisationKey relinKey;
 	static FVContext context;
 
 	@BeforeAll
 	public static void oneTimeSetUp() {
-		ps = FVParameters.generateParameterSet(FVParameters.SecurityParam.BITS_128, 2048, 14, 56-14);
+		// Insecure parameters for faster tests; do not use in production.
+		ps = FVParameters.FVParamsN1024S128insecure;
 		privKey = new FVPrivateKey(ps);
-		context = FVContext.BuildDefaultContext(privKey);
+		pubKey = new FVPublicKey(privKey);
+		encoder = new FVEncoder(ps);
+		relinKey = new FVRelinearisationKey(privKey);
+		context = new FVContext(pubKey, encoder, relinKey, null);
+	}
+
+	private static FVContext buildRotationContext() {
+		return FVContext.BuildDefaultContext(privKey);
 	}
 
 
@@ -156,7 +168,9 @@ class FVVectorTest {
 	}
 
 	@Test
+	@Tag("slow")
 	void testRotationOfCiphertexts() {
+		FVContext rotationContext = buildRotationContext();
 
 		long data1[] = new long[(int)ps.polynomialModulusExponent];
 		for(int i = 0; i < data1.length; i++)
@@ -164,11 +178,11 @@ class FVVectorTest {
 			data1[i] = i;
 		}
 		
-		FVCipherText ct1 = context.encodeAndEncrypt(data1);
-		FVCipherText ct2 = context.interchangeSlotVectors(ct1);
+		FVCipherText ct1 = rotationContext.encodeAndEncrypt(data1);
+		FVCipherText ct2 = rotationContext.interchangeSlotVectors(ct1);
 		
-		long[] decoded1 = context.decryptAndDecode(ct1, privKey);
-		long[] decoded2 = context.decryptAndDecode(ct2, privKey);
+		long[] decoded1 = rotationContext.decryptAndDecode(ct1, privKey);
+		long[] decoded2 = rotationContext.decryptAndDecode(ct2, privKey);
 		
 		for(int i = 0; i < data1.length/2; i++)
 		{
@@ -176,6 +190,25 @@ class FVVectorTest {
 			assertEquals(decoded1[i + data1.length/2], decoded2[i]);  	
 		}
 
+	}
+
+	@Test
+	@Tag("slow")
+	void testSumIntoFirstSlot() {
+		FVContext rotationContext = buildRotationContext();
+		long data[] = new long[(int)ps.polynomialModulusExponent];
+		long expectedSum = 0;
+		for(int i = 0; i < data.length; i++)
+		{
+			data[i] = ps.ptRing.modulus(i);
+			expectedSum = ps.ptRing.modulus(expectedSum + data[i]);
+		}
+		
+		FVCipherText ct = rotationContext.encodeAndEncrypt(data);
+		FVCipherText ctSummed = rotationContext.sumIntoFirstSlot(ct);
+		
+		long[] decoded = rotationContext.decryptAndDecode(ctSummed, privKey);
+		assertEquals(expectedSum, decoded[0], "Slot 0 should contain the sum of all slots");
 	}
 	
 }

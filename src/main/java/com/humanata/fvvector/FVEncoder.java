@@ -46,7 +46,7 @@ public class FVEncoder {
 	 * @param params the set of parameters for the encoding mechanism
 	 * 
 	 */
-	FVEncoder(FVParameters params)
+	public FVEncoder(FVParameters params)
 	{
 		this.params = params;
 		this.generatorPowers = PolynomialUtils.CalculateMappingOfRoots(params.polynomialModulusExponent);
@@ -60,6 +60,7 @@ public class FVEncoder {
 	 * 
 	 * @param values Array of longs to be encoded, must be length params.polynomialModulusExponent
 	 * @return Polynomial with values encoded in the slots
+	 * @throws RuntimeException if values length does not match params.polynomialModulusExponent
 	 */
 	UnivariatePolynomialZp64 encode(long[] values)
 	{
@@ -80,6 +81,7 @@ public class FVEncoder {
 	 * 
 	 * @param poly Polynomial to decode - should be consistent with the parameters of the encoder
 	 * @return Array of longs of length params.polynomialModulusExponent
+	 * @throws RuntimeException if the polynomial does not match the encoder parameters
 	 * 
 	 */
 	long[] decode(UnivariatePolynomialZp64 poly)
@@ -188,7 +190,8 @@ public class FVEncoder {
 	 * @param poly polynomial to rotate
 	 * @param slots number of slots to rotate
 	 * @return
-	 */	UnivariatePolynomialZp64 rotateRight(UnivariatePolynomialZp64 poly, int slots)
+	 */
+	UnivariatePolynomialZp64 rotateRight(UnivariatePolynomialZp64 poly, int slots)
 	{
 		if(slots == 0)
 			return poly.copy();

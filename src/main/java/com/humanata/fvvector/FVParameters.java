@@ -11,6 +11,13 @@ import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.IntegersZp64;
@@ -19,11 +26,16 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 
 /**
- * 
- * This class is used to construct a description of the parameters of the FV crypto system
- * that is being used.
- * 
- * There are some stringent limitations on the parameters at this time:
+ * Constructs a description of the parameters of the FV cryptosystem.
+ * <p>
+ * <b>WARNING — NOT FOR PRODUCTION:</b> This library is for experimentation and learning only.
+ * Do not use in production systems, for sensitive data, or in any security-critical context.
+ * It has not undergone a security review and may have side-channel vulnerabilities.
+ * <p>
+ * Use only standard presets ({@link #FVParamsN1024S128}, {@link #FVParamsN2048S128}).
+ * The {@code *insecure} variants use near-zero noise and offer no real security.
+ *
+ * <p>There are some stringent limitations on the parameters at this time:
  * * only polynomials of the form X^(2^d)+1 are supported for some d
  * * 2^d is smaller or less that 32768
  * * the plainTextModulus must be smaller than 2^61 at this time
@@ -42,7 +54,8 @@ public class FVParameters {
 	public enum SecurityParam {
 	    BITS_128, BITS_192 
 	};
-	
+
+	private final SecurityParam securityParam;
 	public static final int maxCoefficientBits = Long.SIZE - 3;
 	public static final long maxCoefficientModulus = (1L << maxCoefficientBits);
 	public static final int maxPolynomialExponent = 32768;
@@ -83,7 +96,7 @@ public class FVParameters {
      * A conservative parameter set that gives 128 bits of security and 2048 vector size.
      * Has 32 bits for the plaintext, 56 for the ciphertext, giving q/t of 24 bits.
      */
-    public static final FVParameters FVParamsN2048S128  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, defaultNoiseSD, 8); //19 bits in t, 29 bits in q
+    public static final FVParameters FVParamsN2048S128  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, defaultNoiseSD, 8); //32 bits in t, 56 bits in q
  
     /**
      * A conservative parameter set that gives 128 bits of security and 2048 vector size.
@@ -91,11 +104,17 @@ public class FVParameters {
      */
     public static final FVParameters FVParamsN2048S128small  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057594037920137L, 40961L, defaultNoiseSD, 8); //16 bits in t, 40 bits in q
 
-     /** 
-      * Some insecure parameters - with no noise added to the ciphertexts. Purely here for testing and @todo should be removed.
-      */
+    /**
+     * <b>Testing only — do not use in real setting.</b> Insecure parameters with near-zero noise.
+     * Use {@link #FVParamsN1024S128} or {@link #FVParamsN2048S128} for real encryption.
+     */
     public static final FVParameters FVParamsN1024S128insecure  = new FVParameters(SecurityParam.BITS_128, 1024L, 536834866L, 40961L, 0.0000000001, 8); //16 bits in t, 29 bits in q
-    public static final FVParameters FVParamsN2048S128insecure  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, 0.0000000001, 8); //19 bits in t, 29 bits in q
+
+    /**
+     * <b>Testing only — do not use in a real setting.</b> Insecure parameters with near-zero noise.
+     * Use {@link #FVParamsN2048S128} for real encryption.
+     */
+    public static final FVParameters FVParamsN2048S128insecure  = new FVParameters(SecurityParam.BITS_128, 2048L, 72057593221401751L, 4096172033L, 0.0000000001, 8); //32 bits in t, 56 bits in q
     
    
     
@@ -116,8 +135,8 @@ public class FVParameters {
 	IntegersZp64 ctRing;   // ciphertext ring - integers modulus coefficientModulus
 	UnivariatePolynomialZp64 ptQuotientPoly;  // the quotient poly = x^polynomialModulusExponent + 1 with coefficients from plaintext ring
 	UnivariatePolynomialZp64 ctQuotientPoly;  // the quotient poly = x^polynomialModulusExponent + 1 with coefficients from ciphertext ring
-	FiniteField<UnivariatePolynomialZp64> ptPolyField; // the Galois Field represented by polynomials with coefficients in the plaintext ring modolo the quotient poly
-	FiniteField<UnivariatePolynomialZp64> ctPolyField; // the Galois Field represented by polynomials with coefficients in the ciphertext ring modolo the quotient poly
+	FiniteField<UnivariatePolynomialZp64> ptPolyField; // the Galois Field represented by polynomials with coefficients in the plaintext ring modulo the quotient poly
+	FiniteField<UnivariatePolynomialZp64> ctPolyField; // the Galois Field represented by polynomials with coefficients in the ciphertext ring modulo the quotient poly
  	
 	/**
 	 * 
@@ -134,6 +153,7 @@ public class FVParameters {
      */
 	public FVParameters(SecurityParam bos, long n, long q, long t, double sigma, long decompBase)
 	{
+		this.securityParam = bos;
 		this.coefficientModulus = q;
 		this.polynomialModulusExponent = n;
 		this.plainTextModulus = t;
@@ -142,6 +162,104 @@ public class FVParameters {
 		this.l = (long)Math.floor(Math.log(q)/Math.log(decompBase));
 		CheckParameterConsistency(bos);
 		ConstructPolynomialFields();
+	}
+
+	/**
+	 * Returns the security parameter used to construct this parameter set.
+	 *
+	 * @return the SecurityParam level
+	 */
+	public SecurityParam getSecurityParam()
+	{
+		return securityParam;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof FVParameters)) {
+			return false;
+		}
+		FVParameters other = (FVParameters) obj;
+		return securityParam == other.securityParam
+				&& coefficientModulus == other.coefficientModulus
+				&& plainTextModulus == other.plainTextModulus
+				&& polynomialModulusExponent == other.polynomialModulusExponent
+				&& decompositionBase == other.decompositionBase
+				&& Double.compare(noiseStandardDeviation, other.noiseStandardDeviation) == 0;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		int result = securityParam.hashCode();
+		result = 31 * result + Long.hashCode(coefficientModulus);
+		result = 31 * result + Long.hashCode(plainTextModulus);
+		result = 31 * result + Long.hashCode(polynomialModulusExponent);
+		result = 31 * result + Long.hashCode(decompositionBase);
+		long tmp = Double.doubleToLongBits(noiseStandardDeviation);
+		result = 31 * result + (int) (tmp ^ (tmp >>> 32));
+		return result;
+	}
+
+	/**
+	 * Serialize this parameter set to a byte array.
+	 *
+	 * @return serialized parameter bytes
+	 */
+	public byte[] toBytes()
+	{
+		try {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			DataOutputStream out = new DataOutputStream(baos);
+			writeTo(out);
+			out.flush();
+			return baos.toByteArray();
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to serialize parameters", e);
+		}
+	}
+
+	/**
+	 * Serialize this parameter set to a data output stream.
+	 *
+	 * @param out destination stream
+	 * @throws IOException if the stream cannot be written
+	 */
+	public void writeTo(DataOutput out) throws IOException
+	{
+		FVSerialization.writeParameters(this, out);
+	}
+
+	/**
+	 * Deserialize a parameter set from a byte array.
+	 *
+	 * @param data serialized parameter bytes
+	 * @return deserialized parameter set
+	 */
+	public static FVParameters fromBytes(byte[] data)
+	{
+		try {
+			DataInputStream in = new DataInputStream(new ByteArrayInputStream(data));
+			return readFrom(in);
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to deserialize parameters", e);
+		}
+	}
+
+	/**
+	 * Deserialize a parameter set from a data input stream.
+	 *
+	 * @param in source stream
+	 * @return deserialized parameter set
+	 * @throws IOException if the stream cannot be read
+	 */
+	public static FVParameters readFrom(DataInput in) throws IOException
+	{
+		return FVSerialization.readParameters(in);
 	}
 	
 	

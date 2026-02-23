@@ -10,11 +10,15 @@ import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 
-/** This class carries around the information required to manipulate 
- * ciphertexts using homomorphic arithmetic and offers convenient
- * 
- * @author har991
+/**
+ * Carries the information required to manipulate ciphertexts using homomorphic
+ * arithmetic and offers a convenient API for encoding, encryption, decryption,
+ * and operations such as addition, multiplication, and slot rotations.
+ * <p>
+ * <b>For experimentation and learning only.</b> Do not use in production or
+ * security-critical systems. See {@link FVParameters} for security warnings.
  *
+ * @author har991
  */
 public class FVContext {
 
@@ -61,6 +65,16 @@ public class FVContext {
 		this.encoder = encoder;
 	}
 
+	/**
+	 * Returns the encoder used by this context for encoding and decoding slot-packed vectors.
+	 *
+	 * @return the FVEncoder for this context's parameters
+	 */
+	public FVEncoder getEncoder()
+	{
+		return encoder;
+	}
+
 	
 	/**
 	 * Encode a vector of longs into a plaintext according to the encryption
@@ -68,8 +82,9 @@ public class FVContext {
 	 * 
 	 * @param data array of long data to be encrypted - throws on incorrect length
 	 * @return a plaintext object with the data encoded in its slots
+	 * @throws RuntimeException if data length does not match the parameter set
 	 */
-	FVPlainText encode(long[] data)
+	public FVPlainText encode(long[] data)
 	{
 		if(data.length != publicKey.params.polynomialModulusExponent)
 			throw new RuntimeException("Data to encode has wrong length");
@@ -85,8 +100,9 @@ public class FVContext {
 	 * 
 	 * @param pt  the plaintext to decode
 	 * @return a long array with the values in the slots encoded in the plaintext
+	 * @throws RuntimeException if the plaintext does not match the encoder parameters
 	 */
-	long[] decode(FVPlainText pt)
+	public long[] decode(FVPlainText pt)
 	{
 		return pt.decode(encoder);
 	}
@@ -94,10 +110,11 @@ public class FVContext {
 	/**
 	 * Encrypt an encoded plaintext into a ciphertext using the public key associated with this context
 	 * 
-	 * @param pt plaintext to encrypte
+	 * @param pt plaintext to encrypt
 	 * @return ciphertext with encrypted plaintext
+	 * @throws RuntimeException if plaintext parameters do not match the public key
 	 */
-	FVCipherText encrypt(FVPlainText pt)
+	public FVCipherText encrypt(FVPlainText pt)
 	{
 		return pt.encrypt(publicKey);
 	}
@@ -107,8 +124,9 @@ public class FVContext {
 	 * 
 	 * @param data the data to encrypt
 	 * @return a cipher text object with the encrypted data
+	 * @throws RuntimeException if data length does not match the parameter set
 	 */
-	FVCipherText encodeAndEncrypt(long[] data)
+	public FVCipherText encodeAndEncrypt(long[] data)
 	{
 		return encode(data).encrypt(publicKey);
 	}
@@ -119,8 +137,9 @@ public class FVContext {
 	 * @param ct ciphertext to decrypt
 	 * @param pk private key to use
 	 * @return a plaintext with data encoded in the slots
+	 * @throws RuntimeException if key parameters do not match the ciphertext parameters
 	 */
-	FVPlainText decrypt(FVCipherText ct, FVPrivateKey pk)
+	public FVPlainText decrypt(FVCipherText ct, FVPrivateKey pk)
 	{
 		return ct.decrypt(pk);
 	}
@@ -131,8 +150,9 @@ public class FVContext {
 	 * @param ct ciphertext to decrypt and decode
 	 * @param pk private key to use
 	 * @return an array with the decoded data
+	 * @throws RuntimeException if key parameters do not match the ciphertext parameters
 	 */
-	long[] decryptAndDecode(FVCipherText ct, FVPrivateKey pk)
+	public long[] decryptAndDecode(FVCipherText ct, FVPrivateKey pk)
 	{
 		return decode(decrypt(ct, pk));
 	}
@@ -143,8 +163,9 @@ public class FVContext {
 	 * @param ct1 first operand
 	 * @param ct2 second operand
 	 * @return new ciphertext with the result
+	 * @throws RuntimeException if ciphertext parameters do not match
 	 */
-	FVCipherText add(FVCipherText ct1, FVCipherText ct2)
+	public FVCipherText add(FVCipherText ct1, FVCipherText ct2)
 	{
 		FVCipherText ret = new FVCipherText(ct1);
 		ret.addTo(ct2);
@@ -157,8 +178,9 @@ public class FVContext {
 	 * @param ct1 first operand
 	 * @param ct2 second operand
 	 * @return new ciphertext with the result
+	 * @throws RuntimeException if ciphertext parameters do not match
 	 */
-	FVCipherText subtract(FVCipherText ct1, FVCipherText ct2)
+	public FVCipherText subtract(FVCipherText ct1, FVCipherText ct2)
 	{
 		FVCipherText ret = new FVCipherText(ct1);
 		ret.subtractFrom(ct2);
@@ -171,8 +193,9 @@ public class FVContext {
 	 * @param ct1 first operand
 	 * @param ct2 second operand
 	 * @return new ciphertext with the result
+	 * @throws RuntimeException if ciphertext parameters do not match
 	 */
-	FVCipherText multiplyWithoutRelinearisation(FVCipherText ct1, FVCipherText ct2)
+	public FVCipherText multiplyWithoutRelinearisation(FVCipherText ct1, FVCipherText ct2)
 	{
 		FVCipherText ret = new FVCipherText(ct1);
 		ret.multiplyBy(ct2);
@@ -185,8 +208,9 @@ public class FVContext {
 	 * @param ct1 first operand
 	 * @param ct2 second operand
 	 * @return new ciphertext with the relinearised result
+	 * @throws RuntimeException if ciphertext parameters do not match
 	 */
-	FVCipherText multiply(FVCipherText ct1, FVCipherText ct2)
+	public FVCipherText multiply(FVCipherText ct1, FVCipherText ct2)
 	{
 		FVCipherText ret = new FVCipherText(ct1);
 		ret.multiplyBy(ct2);
@@ -200,9 +224,10 @@ public class FVContext {
 	 * 
 	 * @param ct1 first operand
 	 * @param pt2 second operand
-	 * @return new ciphertext with the relinearised result
+	 * @return new ciphertext with the result
+	 * @throws RuntimeException if plaintext size does not match the ciphertext parameters
 	 */
-	FVCipherText multiply(FVCipherText ct1, FVPlainText pt2)
+	public FVCipherText multiply(FVCipherText ct1, FVPlainText pt2)
 	{
 		FVCipherText ret = new FVCipherText(ct1);
 		ret.multiplyBy(pt2);
@@ -210,14 +235,15 @@ public class FVContext {
 	}
 
 	/**
-	 * Multiply a plaintext by a ciphertext and return a new ciphertext with the result
+	 * Multiply a plaintext by a ciphertext and return a new ciphertext with the result.
 	 * This does not require relinearisation.
 	 * 
 	 * @param pt1 first operand
 	 * @param ct2 second operand
-	 * @return new ciphertext with the relinearised result
+	 * @return new ciphertext with the result
+	 * @throws RuntimeException if plaintext size does not match the ciphertext parameters
 	 */
-	FVCipherText multiply(FVPlainText pt1, FVCipherText ct2)
+	public FVCipherText multiply(FVPlainText pt1, FVCipherText ct2)
 	{
 		FVCipherText ret = new FVCipherText(ct2);
 		ret.multiplyBy(pt1);
@@ -229,8 +255,9 @@ public class FVContext {
 	 * 
 	 * @param input ciphertext to transform
 	 * @return new ciphertext with transformed result
+	 * @throws RuntimeException if ciphertext is not a 2-element ciphertext
 	 */
-	FVCipherText interchangeSlotVectors(FVCipherText input)
+	public FVCipherText interchangeSlotVectors(FVCipherText input)
 	{
 		FVCipherText ret = new FVCipherText(input);
 		ret.rotate(encoder, encoder.interchangeIndex());
@@ -243,8 +270,9 @@ public class FVContext {
 	 * 
 	 * @param input ciphertext to transform
 	 * @return new ciphertext with transformed result
+	 * @throws RuntimeException if ciphertext is not a 2-element ciphertext
 	 */
-	FVCipherText rotateSlotsLeft(FVCipherText input, int toLeft)
+	public FVCipherText rotateSlotsLeft(FVCipherText input, int toLeft)
 	{
 		FVCipherText ret = new FVCipherText(input);
 		ret.rotate(encoder, encoder.leftRotateIndex(toLeft));
@@ -257,12 +285,51 @@ public class FVContext {
 	 * 
 	 * @param input ciphertext to transform
 	 * @return new ciphertext with transformed result
+	 * @throws RuntimeException if ciphertext is not a 2-element ciphertext
 	 */
-	FVCipherText rotateSlotsRight(FVCipherText input, int toRight)
+	public FVCipherText rotateSlotsRight(FVCipherText input, int toRight)
 	{
 		FVCipherText ret = new FVCipherText(input);
 		ret.rotate(encoder, encoder.rightRotateIndex(toRight));
 		ret.rotationRekey(rotKey, encoder.rightRotateIndex(toRight));
+		return ret;
+	}
+
+	/**
+	 * Sum all slot values into the first slot.
+	 * The result ciphertext has the sum of all input slots in slot 0;
+	 * other slots may contain arbitrary values.
+	 *
+	 * @param input ciphertext whose slots to sum
+	 * @return new ciphertext with the sum in slot 0
+	 * @throws RuntimeException if ciphertext is not a 2-element ciphertext
+	 */
+	public FVCipherText sumIntoFirstSlot(FVCipherText input)
+	{
+		FVCipherText ret = new FVCipherText(input);
+		ret.sumIntoFirstSlot(rotKey);
+		return ret;
+	}
+
+	/**
+	 * Compute the dot product of two encrypted vectors.
+	 * The result ciphertext has the sum of elementwise products in slot 0;
+	 * other slots may contain arbitrary values.
+	 *
+	 * @param ct1 first operand
+	 * @param ct2 second operand
+	 * @return new ciphertext with the dot product in slot 0
+	 * @throws RuntimeException if rotation key is not available
+	 */
+	public FVCipherText dotProduct(FVCipherText ct1, FVCipherText ct2)
+	{
+		if(relinKey == null)
+			throw new RuntimeException("Relinearisation key not available for dotProduct");
+		if(rotKey == null)
+			throw new RuntimeException("Rotation key not available for dotProduct");
+
+		FVCipherText ret = multiply(ct1, ct2);
+		ret.sumIntoFirstSlot(rotKey);
 		return ret;
 	}
 

@@ -1,13 +1,14 @@
-
+> **⚠️ DISCLAIMER:** This library is for **experimentation and learning purposes only**. It must **not** be used in production systems, for sensitive data, or in any security-critical context. It has not undergone a security review, may have side-channel vulnerabilities, and is intended solely to illustrate homomorphic encryption concepts.
 
 ## Introduction
-FVVector is a java native library that implements the Fan-Vercauteren encryption system for homomorphic operations on vectors of integers. It has a simple API and is designed as a demonstration library that illustrates the concepts behind the scheme. 
+
+FVVector is a Java library that implements the Fan-Vercauteren homomorphic encryption scheme for slot-packed vector operations. It has a simple API and is designed as a demonstration library that illustrates the concepts behind the scheme. **Use only for experimentation, prototyping, and education** — not for production or important systems.
 
 ## Hello World
-Let's do a homomorphic multiplication of a vector of 1024 integers packed into a single ciphertext.
+Let's do a homomorphic multiplication of a vector of 2048 integers packed into a single ciphertext.
 
 #### Setup
-		FVParameters ps = FVParameters.FVParamsN1024S128;
+		FVParameters ps = FVParameters.FVParamsN2048S128;
 		FVPrivateKey privKey = new FVPrivateKey(ps);
 		FVContext context = FVContext.BuildDefaultContext(privKey);
 		
@@ -24,8 +25,8 @@ Let's do a homomorphic multiplication of a vector of 1024 integers packed into a
 		}
 
 #### Homomorphic arithmetic		
-		FVCipherText ct1 = context.encrypt(data1);
-		FVCipherText ct2 = context.encrypt(data2);
+		FVCipherText ct1 = context.encodeAndEncrypt(data1);
+		FVCipherText ct2 = context.encodeAndEncrypt(data2);
 		FVCipherText ct3 = context.multiply(ct1, ct2);
 		long datares[] = context.decryptAndDecode(ct3, privKey);
 
@@ -41,9 +42,20 @@ The library as implemented allows the encryption of power of two vector lengths 
 * addition of encrypted vectors
 * multiplication of encrypted vectors
 * certain rotations and permutations of the elements
+* sum of all slots into the first slot (`sumIntoFirstSlot`)
+* dot product of two encrypted vectors (`dotProduct`)
 * decryption of the vectors
 
 As implemented, the library allows the use of moduli up to 63 bits in size. This limits the number of arithmetic and rotation operations that can be done while still allowing correct decryption of the results.
+
+## Security Considerations
+
+**This library is not suitable for production use.** See the disclaimer above.
+
+* **Parameter selection:** Use only the standard parameter presets. Do **not** use the `*insecure` variants outside of unit tests — they use near-zero noise and offer no real security.
+* **Noise growth:** Multiplication increases noise quickly. Repeated multiplications can cause decryption failures even with valid parameters.
+* **Constant-time operations:** The library does not provide constant-time guarantees. Side-channel attacks may be possible.
+* **Serialization:** Keys, ciphertexts, and plaintexts can be serialized via `toBytes`/`fromBytes`. Treat serialized material as sensitive and protect it at rest and in transit.
 
 ## Structure
 
@@ -73,10 +85,11 @@ The basic information about the cryptosystem that is being used is contained in 
 * number of bits available to encode numbers as a plain text
 * number of bits of headroom available for homomorphic operations
 
-Setting these parameters can be quite complicated, so there are two convenience types declared that have convenient choices avilable:
+Setting these parameters can be quite complicated, so there are three convenience types declared that have convenient choices available:
 
 **FVParameters.FVParamsN1024S128** - A conservative parameter set that gives 128 bits of security and 1024 vector size. Has 16 bits for the plaintext, 29 for the ciphertext, giving 13 bits of headroom. This is enough for encrypt/decrypt, but not enough for much arithmetic.
 **FVParameters.FVParamsN2048S128** - A conservative parameter set that gives 128 bits of security and 2048 vector size. Has 32 bits for the plaintext, 56 for the ciphertext, giving 24 bits of headroom.
+**FVParameters.FVParamsN2048S128small** - A conservative parameter set that gives 128 bits of security and 2048 vector size. Has 16 bits for the plaintext, 40 for the ciphertext, giving 24 bits of headroom.
 
 
 		
@@ -94,22 +107,25 @@ For convenience, an **FVContext** can be created from the private key, which use
 | encode and encrypt | encodeAndEncrypt | encode a vector of longs and encrypt to ciphertext |
 | decrypt and decode | decryptAndDecode | decrypt a ciphertext and decode to a vector of longs |
 | addition | add | add two ciphertexts |
-| subtraction | subtract | subtract one cyphertext from another |
+| subtraction | subtract | subtract one ciphertext from another |
 | multiplication | multiply | multiply two ciphertexts (and relinearise) |
 | multiplication | multiply | multiply a ciphertext by a plaintext |
 | slot permutation | interchangeSlotVectors | treat encrypted vector as two rows and swap rows |
 | slot permutation | rotateSlotsLeft | treat encrypted vector as two rows and rotate rows left |
 | slot permutation | rotateSlotsRight | treat encrypted vector as two rows and rotate rows right |
+| slot permutation | sumIntoFirstSlot | sum all slots into slot 0 |
+| aggregation | dotProduct | dot product of two ciphertexts into slot 0 |
 
 
 ### Detailed approach
 Rather than using the FVContext object to manipulate plaintexts and ciphertexts directly, it is possible to use the methods of the objects directly. Consult the javadocs for the classes for details.
 
+## Serialization
+Keys, ciphertexts, and plaintexts can be serialized for storage or transport using the `toBytes` and `fromBytes` methods.
+The format is a simple binary encoding and is not guaranteed to be stable across major versions.
+
 
 ## Performance
 The library is written wholly in java and all polynomial manipulations in finite fields are done using the Redberry Rings java library. Due to this, several algorithmic optimisations that are used in other libraries have not been implemented (yet). These include representing the ciphertext polynomial coefficients in a residue number system (RNS), and also the use of the Number Theoretic Transform in performing polynomial multiplications. This means that this library is algorithmically slower than other implementations out there. However, because of this, it is significantly easier to understand 
-
-
-
 
 

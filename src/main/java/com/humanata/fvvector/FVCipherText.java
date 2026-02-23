@@ -1,5 +1,12 @@
 package com.humanata.fvvector;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import com.humanata.fvvector.FVPlainText;
@@ -18,9 +25,11 @@ import static cc.redberry.rings.poly.PolynomialMethods.*;
 import static cc.redberry.rings.Rings.*;
 
 /**
- * This class represents a cipher text represented as an array of polynomials. This object has simple homomorphic 
- * arithmetic operations defined for it. Given a compatible private key, it can decrypt to a plaintext.
- * 
+ * Represents a ciphertext as an array of polynomials, with homomorphic arithmetic operations.
+ * Given a compatible private key, it can decrypt to a plaintext.
+ * <p>
+ * <b>For experimentation and learning only.</b> Not for production use.
+ * This class supports serialization via {@code toBytes}/{@code fromBytes}.
  */
 public class FVCipherText {
 
@@ -61,7 +70,7 @@ public class FVCipherText {
 	 * Return the size of the ciphertext (number of polynomials)
 	 * @return number of polynomials in the ciphertext
 	 */
-	int size()
+	public int size()
 	{
 		return polys.size();
 	}
@@ -70,14 +79,15 @@ public class FVCipherText {
 	 * 
 	 * @param privKey private key for decryption - parameter consistency will be checked.
 	 * @return a FVPlainText object with the decrypted result
+	 * @throws RuntimeException if key parameters do not match the ciphertext parameters
 	 */
-	FVPlainText decrypt(FVPrivateKey privKey)
+	public FVPlainText decrypt(FVPrivateKey privKey)
 	{
 		if(!privKey.params.equals(this.params))
 			throw new RuntimeException("Decryption key parameters do not match ciphertext parameters");
 		
 		UnivariatePolynomialZp64 sum = 
-				PolynomialUtils.dotProducWithPowers(privKey.params.ctPolyField, polys, privKey.key());
+				PolynomialUtils.dotProductWithPowers(privKey.params.ctPolyField, polys, privKey.key());
 
 		long delta = privKey.params.coefficientModulus / privKey.params.plainTextModulus;
 
@@ -94,6 +104,7 @@ public class FVCipherText {
 	 * 
 	 * @param field0 first element of the ciphertext as a polynomial
 	 * @param field1 second element of the ciphertext as a polynomial
+	 * @throws RuntimeException if the polynomial modulus does not match ciphertext parameters
 	 */
 	void set(UnivariatePolynomialZp64 field0, UnivariatePolynomialZp64 field1)
 	{
@@ -111,9 +122,10 @@ public class FVCipherText {
 	/**
 	 * Add the specified ciphertext to this
 	 * 
-	 * @param ct2 polynomial to add
+	 * @param ct2 ciphertext to add
+	 * @throws RuntimeException if ciphertext parameters do not match
 	 */
-	void addTo(FVCipherText ct2)
+	public void addTo(FVCipherText ct2)
 	{
 		if(!ct2.params.equals(this.params)) 
 			throw new RuntimeException("Ciphertext parameters in addition do not match");
@@ -135,9 +147,10 @@ public class FVCipherText {
 	/**
 	 * Subtract the specified ciphertext from this
 	 * 
-	 * @param ct2 polynomial to add
+	 * @param ct2 ciphertext to subtract
+	 * @throws RuntimeException if ciphertext parameters do not match
 	 */
-	void subtractFrom(FVCipherText ct2)
+	public void subtractFrom(FVCipherText ct2)
 	{
 		if(!ct2.params.equals(this.params)) 
 			throw new RuntimeException("Ciphertext parameters in subtraction do not match");
@@ -157,11 +170,12 @@ public class FVCipherText {
 	}
 	
 	/**
-	 * Multiply the this by the specified ciphertext
+	 * Multiply this by the specified ciphertext
 	 * 
-	 * @param ct2 the polynomial to multiply by
+	 * @param ct2 the ciphertext to multiply by
+	 * @throws RuntimeException if ciphertext parameters do not match
 	 */
-	void multiplyBy(FVCipherText ct2)
+	public void multiplyBy(FVCipherText ct2)
 	{
 		if(!ct2.params.equals(this.params)) 
 			throw new RuntimeException("Ciphertext parameters in multiplication do not match");
@@ -181,11 +195,12 @@ public class FVCipherText {
 	}
 
 	/**
-	 * Multiply the this by the specified plaintext
+	 * Multiply this by the specified plaintext
 	 * 
 	 * @param pt the plaintext to multiply by
+	 * @throws RuntimeException if plaintext size does not match ciphertext parameters
 	 */
-	void multiplyBy(FVPlainText pt)
+	public void multiplyBy(FVPlainText pt)
 	{
 		// @todo: add parameters block to plaintext to make this check correct.
 		if(pt.encoding.size() != this.params.polynomialModulusExponent) 
@@ -200,8 +215,9 @@ public class FVCipherText {
 	 * Relinearise this ciphertext from three elements to two
 	 * 
 	 * @param rk the key to use for relinearisation
+	 * @throws RuntimeException if key parameters do not match or ciphertext size is not 3
 	 */
-	void relineariseCubic(FVRelinearisationKey rk)
+	public void relineariseCubic(FVRelinearisationKey rk)
 	{
 		if(!rk.params.equals(this.params)) 
 			throw new RuntimeException("Ciphertext parameters in relinearisation key do not match");
@@ -225,18 +241,19 @@ public class FVCipherText {
 	/**
 	 * Decrypt the cipher text and determine what the maximum deviation from the lattice points 
 	 * in the plain text polynomial space is. A number close to 0.5 means that the ciphertext is
-	 * likely not to have decypted properly.
+	 * likely not to have decrypted properly.
 	 *  
 	 * @param privKey private key to do the decryption with
 	 * @return double measure from 0.0 to 0.5 - smaller means less noise.
+	 * @throws RuntimeException if key parameters do not match the ciphertext parameters
 	 */
-	double measureCTNoise(FVPrivateKey privKey)
+	public double measureCTNoise(FVPrivateKey privKey)
 	{
 		if(!privKey.params.equals(this.params))
 			throw new RuntimeException("Decryption key parameters do not match ciphertext parameters");
 		
 		UnivariatePolynomialZp64 sum = 
-				PolynomialUtils.dotProducWithPowers(privKey.params.ctPolyField, polys, privKey.key());
+				PolynomialUtils.dotProductWithPowers(privKey.params.ctPolyField, polys, privKey.key());
 
 		double delta = (double)privKey.params.coefficientModulus / (double)privKey.params.plainTextModulus;
 		long[] res = new long[(int)privKey.params.polynomialModulusExponent];
@@ -257,9 +274,10 @@ public class FVCipherText {
 	 * Transform this ciphertext using the given rotation element in the encoder
 	 * 
 	 * @param encoder the encoder for the data stored in the ciphertext
-	 * @param index the element of the basis to usefor the rotation
+	 * @param index the element of the basis to use for the rotation
+	 * @throws RuntimeException if ciphertext is not a 2-element ciphertext
 	 */
-	void rotate(FVEncoder encoder, int index)
+	public void rotate(FVEncoder encoder, int index)
 	{
 		if(polys.size() != 2)
 			throw new RuntimeException("Rotating a ciphertext with other than 2 elements is not implemented");
@@ -279,8 +297,10 @@ public class FVCipherText {
 	 * Rekey this ciphertext from a rotation of the secret key back to the secret key
 	 * 
 	 * @param rk the key to use for rekeying
+	 * @param rotation the rotation index used
+	 * @throws RuntimeException if key parameters do not match or ciphertext is not 2 elements
 	 */
-	void rotationRekey(FVRotationKey rk, int rotation)
+	public void rotationRekey(FVRotationKey rk, int rotation)
 	{
 		if(!rk.params.equals(this.params)) 
 			throw new RuntimeException("Ciphertext parameters in rotation key do not match");
@@ -299,9 +319,107 @@ public class FVCipherText {
 		polys.add(newc1);
 	}
 
-	void sumIntoFirstSlot(FVRotationKey rk)
+	/**
+	 * Sum all slot values into the first slot, in place.
+	 * Uses rotate-and-add: iteratively rotate by powers of 2, add to double the
+	 * number of slots summed, until all slots are summed into slot 0.
+	 *
+	 * @param rk the rotation key for rekeying after each rotation
+	 * @throws RuntimeException if key parameters do not match or ciphertext is not 2 elements
+	 */
+	public void sumIntoFirstSlot(FVRotationKey rk)
 	{
+		if(!rk.params.equals(this.params))
+			throw new RuntimeException("Rotation key parameters do not match ciphertext");
+		if(polys.size() != 2)
+			throw new RuntimeException("sumIntoFirstSlot requires a ciphertext with 2 elements");
 
+		FVEncoder encoder = rk.getEncoder();
+		int n2 = (int)params.polynomialModulusExponent / 2;
+
+		// Step 1: Interchange rows (N/2 x 2) and add - sums pairs from the two rows
+		FVCipherText rotated = new FVCipherText(this);
+		rotated.rotate(encoder, encoder.interchangeIndex());
+		rotated.rotationRekey(rk, encoder.interchangeIndex());
+		addTo(rotated);
+
+		// Step 2: Rotate by 1, 2, 4, ... and add - each step doubles the number of slots summed
+		for(int stride = 1; stride < n2; stride *= 2)
+		{
+			int idx = encoder.leftRotateIndex(stride);
+			rotated = new FVCipherText(this);
+			rotated.rotate(encoder, idx);
+			rotated.rotationRekey(rk, idx);
+			addTo(rotated);
+		}
+
+		// After Step 2, every slot contains the sum; slot 0 is the result.
+	}
+
+	/**
+	 * Serialize this ciphertext to a byte array.
+	 *
+	 * @return serialized ciphertext bytes
+	 */
+	public byte[] toBytes()
+	{
+		try {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			DataOutputStream out = new DataOutputStream(baos);
+			writeTo(out);
+			out.flush();
+			return baos.toByteArray();
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to serialize ciphertext", e);
+		}
+	}
+
+	/**
+	 * Serialize this ciphertext to a data output stream.
+	 *
+	 * @param out destination stream
+	 * @throws IOException if the stream cannot be written
+	 */
+	public void writeTo(DataOutput out) throws IOException
+	{
+		FVSerialization.writeParameters(params, out);
+		FVSerialization.writePolynomialList(polys, out);
+	}
+
+	/**
+	 * Deserialize a ciphertext from a byte array.
+	 *
+	 * @param data serialized ciphertext bytes
+	 * @return deserialized ciphertext
+	 */
+	public static FVCipherText fromBytes(byte[] data)
+	{
+		try {
+			DataInputStream in = new DataInputStream(new ByteArrayInputStream(data));
+			return readFrom(in);
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to deserialize ciphertext", e);
+		}
+	}
+
+	/**
+	 * Deserialize a ciphertext from a data input stream.
+	 *
+	 * @param in source stream
+	 * @return deserialized ciphertext
+	 * @throws IOException if the stream cannot be read
+	 */
+	public static FVCipherText readFrom(DataInput in) throws IOException
+	{
+		FVParameters params = FVSerialization.readParameters(in);
+		ArrayList<UnivariatePolynomialZp64> polys = FVSerialization.readPolynomialList(in, params.coefficientModulus);
+		if (polys.isEmpty()) {
+			throw new IOException("Ciphertext must contain at least one polynomial");
+		}
+		FVCipherText ct = new FVCipherText(params);
+		ct.polys.clear();
+		ct.polys.addAll(polys);
+		return ct;
 	}
 
 }
